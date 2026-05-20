@@ -133,19 +133,7 @@
     .preview-wrapper { display: block !important; border: none !important; box-shadow: none !important; padding: 0 !important; max-width: 100% !important; }
   }
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-  function showNewLeadToast(name) {
-    const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#27AE60;color:#fff;padding:.75rem 1.5rem;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)';
-    t.textContent = '🔔 عميل جديد: ' + name;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 5000);
-  }
-
-</script>
-  <script>
-    const _sb = window.supabase.createClient("https://ilglfjwwbimyjfauruop.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsZ2xmand3YmlteWpmYXVydW9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDc2ODIsImV4cCI6MjA5NDc4MzY4Mn0.HZBiIvc1BRE1v03zdDAXuZgBHudCLGMCGCiZWZ7QPAc");
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -730,13 +718,14 @@
     { ref: "EXP-2026-2002", date: "14/05/2026", type: "مصروف", desc: "أتعاب استشارية فرعية لفريق العمل المساعد في الهيكلة", baseAmount: 15000, taxRate: 0, client: "مصروفات تشغيلية وعامة" }
   ];
 
-  let customers = [];
+  let customers = []; // سيُجلب من Supabase
   let affiliates = JSON.parse(localStorage.getItem('four_core_affiliates_data')) || defaultAffiliates;
   let transactions = JSON.parse(localStorage.getItem('four_core_accounting_data')) || defaultTransactions;
   let quoteItems = [];
 
   // حفظ البيانات المبدئية في التخزين المحلي فوراً إذا لم تكن موجودة
-  // four_core_crm_data removed — Supabase only
+  // CRM data managed by Supabase
+  if(!localStorage.getItem('four_core_affiliates_data')) localStorage.setItem('four_core_affiliates_data', JSON.stringify(affiliates));
   if(!localStorage.getItem('four_core_accounting_data')) localStorage.setItem('four_core_accounting_data', JSON.stringify(transactions));
 
   function switchSection(sectionId) {
@@ -759,24 +748,10 @@
   // ---------------- MODULE 1: CRM LOGIC ----------------
   async function initCRM() {
     try {
-      const { data, error } = await _sb.from('leads').select('*').order('created_at', { ascending: false });
-      if(!error && data) {
-        customers = data.map(r => ({
-          id: r.id,
-          date: (r.created_at||'').slice(0,10),
-          name: r.name||'',
-          phone: r.phone||'',
-          project: r.project||'',
-          status: r.status||'جديد',
-          source: r.source||'صفحة الهبوط'
-        }));
-      }
-    } catch(e) { console.error(e); }
+      const { data, error } = await _sb.from('leads').select('*').order('created_at',{ascending:false});
+      if(!error) customers = (data||[]).map(r=>({id:r.id,date:(r.created_at||'').slice(0,10),name:r.name||'',phone:r.phone||'',project:r.project||'',status:r.status||'جديد',source:r.source||''}));
+    } catch(e){ console.error(e); }
     renderCRMTable();
-    // Real-time
-    _sb.channel('leads').on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'},
-      p => { customers.unshift({id:p.new.id,date:(p.new.created_at||'').slice(0,10),name:p.new.name,phone:p.new.phone,project:p.new.project,status:p.new.status||'جديد',source:p.new.source||'صفحة الهبوط'}); renderCRMTable(); showNewLeadToast(p.new.name); }
-    ).subscribe();
   }
   function openCustomerModal() {
     document.getElementById('crmForm').reset();
@@ -806,26 +781,22 @@
     const status = document.getElementById('formStatus').value;
 
     if(idx === "") {
-      // إضافة جديدة في Supabase
-      const { data, error } = await _sb.from('leads').insert([{ name, phone, project, status, source: 'يدوي' }]).select();
-      if(!error && data) {
-        customers.unshift({ id: data[0].id, date: new Date().toISOString().slice(0,10), name, phone, project, status, source: 'يدوي' });
-      }
+      const {data,error} = await _sb.from('leads').insert([{name,phone,project,status,source:'يدوي'}]).select();
+      if(!error && data) customers.unshift({id:data[0].id,date:new Date().toISOString().slice(0,10),name,phone,project,status,source:'يدوي'});
     } else {
-      // تعديل في Supabase
       const lead = customers[parseInt(idx)];
-      if(lead && lead.id) await _sb.from('leads').update({ name, phone, project, status }).eq('id', lead.id);
-      customers[parseInt(idx)] = { ...lead, name, phone, project, status };
+      if(lead && lead.id) await _sb.from('leads').update({name,phone,project,status}).eq('id',lead.id);
+      customers[parseInt(idx)] = {...lead,name,phone,project,status};
     }
     closeCustomerModal();
     renderCRMTable();
   });
 
   async function deleteCustomer(index) {
-    if(confirm("هل أنت متأكد من الحذف؟")) {
+    if(confirm("هل أنت متأكد تماماً من حذف هذا العميل؟")) {
       const lead = customers[index];
-      if(lead && lead.id) await _sb.from('leads').delete().eq('id', lead.id);
-      customers.splice(index, 1);
+      if(lead && lead.id) await _sb.from('leads').delete().eq('id',lead.id);
+      customers.splice(index,1);
       renderCRMTable();
     }
   }
@@ -1264,9 +1235,36 @@
     });
   }
 
-  window.onload = function() {
-    initCRM();
+  
+
+  // ======= Supabase Client =======
+  const _sb = window.supabase.createClient(
+    "https://ilglfjwwbimyjfauruop.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsZ2xmand3YmlteWpmYXVydW9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDc2ODIsImV4cCI6MjA5NDc4MzY4Mn0.HZBiIvc1BRE1v03zdDAXuZgBHudCLGMCGCiZWZ7QPAc"
+  );
+
+  // Real-time listener
+  function startRealtime() {
+    _sb.channel('leads-rt')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'}, p => {
+        const r = p.new;
+        if(!customers.find(c=>c.id===r.id)) {
+          customers.unshift({id:r.id,date:(r.created_at||'').slice(0,10),name:r.name,phone:r.phone,project:r.project,status:r.status||'جديد',source:r.source||'صفحة الهبوط'});
+          renderCRMTable();
+          const t=document.createElement('div');
+          t.style.cssText='position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#27AE60;color:#fff;padding:.75rem 1.5rem;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;font-family:Lemonada';
+          t.textContent='🔔 عميل جديد: '+r.name;
+          document.body.appendChild(t);
+          setTimeout(()=>t.remove(),5000);
+        }
+      }).subscribe();
+  }
+
+  window.onload = async function() {
+    await initCRM();
+    startRealtime();
   };
+  // ================================
+
 </script>
 </body>
 </html>
