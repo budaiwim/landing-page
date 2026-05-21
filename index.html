@@ -812,6 +812,46 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 <footer>© 2026 المستشار عبدالاله بدوي · جميع الحقوق محفوظة · الرياض، المملكة العربية السعودية</footer>
 
 <script>
+  function submitLead() {
+    // قراءة القيم من الحقول
+    var name = document.getElementById("leadName").value;
+    var phone = document.getElementById("leadPhone").value;
+    var project = document.getElementById("leadProject").value;
+
+    // التحقق من الحقول
+    if (!name || !phone || !project) {
+        alert("الرجاء تعبئة جميع الحقول");
+        return;
+    }
+
+    // رابط Google Script
+    var url = "https://script.google.com/macros/s/AKfycby1F207tt4J157sbHzOEHWIu8rWS_zP3raz2TQs1hoGtWIVzUrCtem4KKScBjBRH9ml/exec";
+
+    // تجهيز البيانات للإرسال
+    var formData = new FormData();
+    formData.append("name", name);
+    formData.append("phone", phone);
+    formData.append("project_type", project);
+
+    // إرسال البيانات
+    fetch(url, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        // إظهار رسالة النجاح
+        document.getElementById("leadFormContent").style.display = "none";
+        document.getElementById("leadSuccess").style.display = "block";
+
+        // إظهار Toast
+        var toast = document.getElementById("statusToast");
+        toast.style.display = "block";
+        setTimeout(() => toast.style.display = "none", 3000);
+    })
+    .catch(error => {
+        alert("حدث خطأ أثناء إرسال البيانات");
+        console.error(error);
+    });
 const CRM_FILE_PATH = "badawi_crm_secured.html";
 
 function openLead(){
@@ -992,48 +1032,6 @@ window.addEventListener('scroll', () => {
 scrollBtn.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
-
-  function submitLead() {
-    // قراءة القيم من الحقول
-    var name = document.getElementById("leadName").value;
-    var phone = document.getElementById("leadPhone").value;
-    var project = document.getElementById("leadProject").value;
-
-    // التحقق من الحقول
-    if (!name || !phone || !project) {
-        alert("الرجاء تعبئة جميع الحقول");
-        return;
-    }
-
-    // رابط Google Script
-    var url = "https://script.google.com/macros/s/AKfycby1F207tt4J157sbHzOEHWIu8rWS_zP3raz2TQs1hoGtWIVzUrCtem4KKScBjBRH9ml/exec";
-
-    // تجهيز البيانات للإرسال
-    var formData = new FormData();
-    formData.append("name", name);
-    formData.append("phone", phone);
-    formData.append("project_type", project);
-
-    // إرسال البيانات
-    fetch(url, {
-        method: "POST",
-        body: formData
-    })
-    .then(response => {
-        // إظهار رسالة النجاح
-        document.getElementById("leadFormContent").style.display = "none";
-        document.getElementById("leadSuccess").style.display = "block";
-
-        // إظهار Toast
-        var toast = document.getElementById("statusToast");
-        toast.style.display = "block";
-        setTimeout(() => toast.style.display = "none", 3000);
-    })
-    .catch(error => {
-        alert("حدث خطأ أثناء إرسال البيانات");
-        console.error(error);
-    });
-}
 </script>
 </body>
 </html>
