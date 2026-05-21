@@ -992,6 +992,48 @@ window.addEventListener('scroll', () => {
 scrollBtn.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
+
+  function submitLead() {
+    // قراءة القيم من الحقول
+    var name = document.getElementById("leadName").value;
+    var phone = document.getElementById("leadPhone").value;
+    var project = document.getElementById("leadProject").value;
+
+    // التحقق من الحقول
+    if (!name || !phone || !project) {
+        alert("الرجاء تعبئة جميع الحقول");
+        return;
+    }
+
+    // رابط Google Script
+    var url = "https://script.google.com/macros/s/AKfycbxOzLm9rE_NIgC0hejF-PCbg13JedprZyr4Zk6qzsYUsmdfpHi5XFeSZcuhIxz2BPMT/exec";
+
+    // تجهيز البيانات للإرسال
+    var formData = new FormData();
+    formData.append("name", name);
+    formData.append("phone", phone);
+    formData.append("project_type", project);
+
+    // إرسال البيانات
+    fetch(url, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        // إظهار رسالة النجاح
+        document.getElementById("leadFormContent").style.display = "none";
+        document.getElementById("leadSuccess").style.display = "block";
+
+        // إظهار Toast
+        var toast = document.getElementById("statusToast");
+        toast.style.display = "block";
+        setTimeout(() => toast.style.display = "none", 3000);
+    })
+    .catch(error => {
+        alert("حدث خطأ أثناء إرسال البيانات");
+        console.error(error);
+    });
+}
 </script>
 </body>
 </html>
