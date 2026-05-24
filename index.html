@@ -31,6 +31,10 @@ nav{position:fixed;top:0;right:0;left:0;z-index:100;background:rgba(250,250,248,
 .nav-links{display:flex;gap:1.25rem;list-style:none;align-items:center;}
 .nav-links a{font-size:11px;color:var(--muted);text-decoration:none;font-weight:600;transition:color .2s;white-space:nowrap;padding:4px 0;}
 .nav-links a:hover{color:var(--gold)}
+.lang-switcher{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+.lang-btn{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:6px;border:1.5px solid var(--gold-border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Lemonada',sans-serif;transition:all .2s;text-decoration:none;line-height:1.4;}
+.lang-btn:hover{background:var(--gold-bg);color:var(--gold);}
+.lang-btn.active{background:var(--gold);color:#FFF8E7;border-color:var(--gold);}
 
 /* ===== HERO ===== */
 .hero{
@@ -177,6 +181,18 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 .status-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#27AE60;color:#fff;padding:.75rem 1.5rem;border-radius:10px;font-size:11.5px;font-weight:700;font-family:'Lemonada',sans-serif;z-index:3000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
 .status-toast.show{opacity:1}
 
+/* ===== IMAGE PROOF MODAL — Cinematic ===== */
+.imodal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:4500;align-items:center;justify-content:center;padding:1.5rem;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.imodal-overlay.open{display:flex;}
+.imodal-inner{position:relative;display:flex;flex-direction:column;align-items:center;gap:1rem;cursor:default;animation:imodalIn .4s cubic-bezier(.23,1,.32,1);}
+@keyframes imodalIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.imodal-img{max-width:min(90vw,640px);max-height:80vh;border-radius:14px;border:2px solid var(--gold-border);box-shadow:0 0 60px rgba(201,168,76,0.35),0 20px 60px rgba(0,0,0,.8);object-fit:contain;display:block;}
+.imodal-caption{font-size:12px;font-weight:600;color:var(--gold-mid);letter-spacing:.5px;text-align:center;}
+.imodal-close{position:absolute;top:-50px;right:0;background:none;border:none;color:#fff;font-size:38px;line-height:1;cursor:pointer;transition:color .2s,transform .2s;}
+.imodal-close:hover{color:var(--gold-mid);transform:rotate(90deg);}
+.proof-img-btn{display:inline-flex;align-items:center;gap:6px;margin-top:.6rem;background:none;border:1px solid var(--gold-border);color:var(--gold);padding:5px 13px;border-radius:20px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:'Lemonada',sans-serif;transition:all .25s;}
+.proof-img-btn:hover{background:var(--gold-bg);border-color:var(--gold-mid);}
+
 /* ===== TIMELINE (kept for animation) ===== */
 .tl-item{opacity:0;transform:translateY(30px);transition:opacity .6s ease,transform .6s ease;will-change:transform,opacity;}
 .tl-item.visible{opacity:1;transform:translateY(0)}
@@ -200,7 +216,6 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   .stat-num{font-size:1.25rem;margin-bottom:3px;}
   section{padding:40px 1rem;}
   .sec-title{font-size:1.35rem;}
-  .quad-grid,.ach-grid,.rec-grid,.contact-grid,.value-stack,.steps-grid{grid-template-columns:1fr;gap:1rem;}
   .problem-list{grid-template-columns:1fr;}
   .clients-grid{grid-template-columns:repeat(3,1fr);gap:0.75rem;}
   .trust-stats{gap:1.5rem;}
@@ -229,6 +244,11 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
     <li><a href="#achievements">الإنجازات</a></li>
     <li><a href="#contact">التواصل</a></li>
   </ul>
+  <div class="lang-switcher">
+    <span class="lang-btn active">عربي</span>
+    <a href="" class="lang-btn">EN</a>
+    <a href="" class="lang-btn">FR</a>
+  </div>
 </div>
 </nav>
 
@@ -329,7 +349,7 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
     <div class="value-card">
       <span class="value-icon">🛡️</span>
       <div class="value-title">تحصين قانوني كامل</div>
-      <div class="value-desc">عقودٌ مُحكمة، امتثال نظامي تام، وحماية حقوقك من أي نزاعات مستقبلية.</div>
+      <div class="value-desc">عقود محكمة، امتثال نظامي تام، وحماية حقوقك من أي نزاعات مستقبلية.</div>
     </div>
     <div class="value-card">
       <span class="value-icon">⚙️</span>
@@ -361,16 +381,18 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 <!-- ===== FUNNEL STAGE 5: الإنجازات — Social Proof ===== -->
 <section id="achievements" style="padding:44px 2rem">
 <div class="container">
-  <span class="sec-tag">الموثوقية</span>
+  <span class="sec-tag">الإنجازات</span>
   <h2 class="sec-title">أرقام تتحدث عن نفسها</h2>
   <div class="sec-line"></div>
   <div class="ach-grid">
-    <div class="ach-card"><span class="stat-num" data-target="2400" data-suffix="×">0×</span><div class="ach-desc">ROI في حملة عقارية خلال 5 أيام بأقل من $610</div><div class="ach-co">قطاع الاستثمار والتطوير العقاري</div></div>
-    <div class="ach-card"><span class="stat-num" data-target="99.66" data-suffix="%" data-decimal="2">0%</span><div class="ach-desc">تقليل الهدر من 3,000,000 إلى أقل من 10,000 ريال سنوياً</div><div class="ach-co">قطاع الاتصالات وتقنية المعلومات</div></div>
+    <div class="ach-card"><span class="stat-num" data-target="2400" data-suffix="×">0×</span><div class="ach-desc">ROI في حملة عقارية خلال 5 أيام بأقل من $610</div><div class="ach-co">قطاع الاستثمار والتطوير العقاري</div><button class="proof-img-btn" onclick="openImgProof('roi','إثبات ROI 2,400× — لقطة شاشة حملة سناب شات')">🖼 شاهد الإثبات</button></div>
+    <div class="ach-card"><span class="stat-num" data-target="99.66" data-suffix="%" data-decimal="2">0%</span><div class="ach-desc">تقليل الهدر من 3,000,000 إلى أقل من 10,000 ريال سنوياً</div><div class="ach-co">قطاع الاتصالات وتقنية المعلومات · STC</div><button class="proof-img-btn" onclick="openImgProof('dashboard','لوحة تحكم نظام الأتمتة — Excel المبرمج')">🖼 شاهد الإثبات</button></div>
     <div class="ach-card"><span class="stat-num" data-target="136" data-suffix="%">0%</span><div class="ach-desc">تجاوز المستهدفات البيعية لمركزين تجاريين</div><div class="ach-co">قطاع البيع بالتجزئة وإدارة العلامات التجارية للأزياء العالمية</div></div>
-    <div class="ach-card"><span class="stat-num" data-target="70" data-suffix="%">0%</span><div class="ach-desc">تقليل الأعطال المتكررة في أقل من شهرين</div><div class="ach-co">قطاع الاتصالات وتقنية المعلومات</div></div>
+    <div class="ach-card"><span class="stat-num" data-target="70" data-suffix="%">0%</span><div class="ach-desc">تقليل الأعطال المتكررة في أقل من شهرين</div><div class="ach-co">قطاع الاتصالات وتقنية المعلومات· STC</div><button class="proof-img-btn" onclick="openImgProof('dashboard','لوحة تحكم نظام تقليل الأعطال — STC')">🖼 شاهد الإثبات</button></div>
     <div class="ach-card"><span class="stat-num" data-target="38" data-suffix="%">0%</span><div class="ach-desc">زيادة القيمة السوقية والإيرادات</div><div class="ach-co">قطاع المقاولات والإنشاءات العامة</div></div>
     <div class="ach-card"><span class="stat-num" data-target="85" data-suffix="%">0%</span><div class="ach-desc">تحقيق المستهدفات في أول 3 أشهر</div><div class="ach-co">قطاع التجارة الرقمية وسلاسل الإمداد</div></div>
+  </div>
+
   </div>
 </div>
 </section>
@@ -437,10 +459,10 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   <div class="clients-grid">
     <div class="client-card"><img class="client-logo" src="https://i.postimg.cc/d3XZ49Pc/shʿar-alhkyr-SVG.png" alt="الحكير"></div>
     <div class="client-card"><img class="client-logo" src="https://primegate.net.sa/wp-content/uploads/2024/10/pg-logo-b.webp" alt="برايم جيت"></div>
-    <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__%D8%A3%D9%86%D8%AC%D9%8I%D9%84%D9%8A%D9%83%D8%A7-e1680446342313-300x103.webp" alt="أنجيليكا"></div>
+    <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__%D8%A3%D9%86%D8%AC%D9%8A%D9%84%D9%8A%D9%83%D8%A7-e1680446342313-300x103.webp" alt="أنجيليكا"></div>
     <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__mango2-300x107.webp" alt="مانجو"></div>
     <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__dreak-Scull-300x107.webp" alt="دريك آند سكول"></div>
-    <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__%D8%A7%D9%84%D9%81%D9%88%D8%B2%D8%A7%D9%85-300x107.webp" alt="الفوزان"></div>
+    <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__%D8%A7%D9%84%D9%81%D9%88%D8%B2%D8%A7%D9%86-300x107.webp" alt="الفوزان"></div>
     <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__LandMarket2-300x107.webp" alt="لاند مارك"></div>
     <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__InterContinental-logo-scaled-e1680446162303-300x102.webp" alt="إنتركونتيننتال"></div>
     <div class="client-card"><img class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__i2-300x107.webp" alt="i2"></div>
@@ -497,6 +519,15 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 </section>
 
 <!-- ===== LEAD FORM MODAL ===== -->
+<!-- ===== IMAGE PROOF MODAL — Cinematic ===== -->
+<div class="imodal-overlay" id="iModalOverlay" onclick="closeImgProof()">
+  <div class="imodal-inner" onclick="event.stopPropagation()">
+    <button class="imodal-close" onclick="closeImgProof()" aria-label="إغلاق">×</button>
+    <img id="iModalImg" src="" alt="إثبات الإنجاز" class="imodal-img">
+    <div id="iModalCaption" class="imodal-caption"></div>
+  </div>
+</div>
+
 <div class="lead-form-overlay" id="leadFormOverlay">
   <div class="lead-form-box">
     <button class="lead-form-close" onclick="closeLead()">×</button>
@@ -539,7 +570,7 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 <div class="status-toast" id="statusToast">✅ تم إرسال بياناتك بنجاح</div>
 
 <div class="floating-actions">
-  <a href="https://wa.me/966533140328?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%20%D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D8%A5%D9%84%D9%87%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8I%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9" target="_blank" class="btn-float btn-whatsapp" title="تواصل مباشرة عبر واتساب">
+  <a href="https://wa.me/966533140328?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%20%D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D8%A5%D9%84%D9%87%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9" target="_blank" class="btn-float btn-whatsapp" title="تواصل مباشرة عبر واتساب">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 11.948 0c3.175.001 6.161 1.24 8.401 3.487 2.24 2.248 3.475 5.238 3.474 8.414-.003 6.557-5.338 11.907-11.893 11.907-2.01 0-3.99-.51-5.747-1.483L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.747 1.451 5.436 0 9.86-4.413 9.863-9.842.001-2.63-1.023-5.101-2.885-6.968C16.452 1.928 13.991.9 11.373.9 5.938.9 1.514 5.313 1.511 10.741c-.001 1.637.452 3.23 1.312 4.615L1.81 19.95l4.837-1.266zM17.522 14.3c-.33-.165-1.951-.964-2.252-1.074-.3-.109-.518-.165-.736.165-.218.33-.846 1.074-1.037 1.293-.19.218-.382.246-.712.082-.33-.165-1.393-.513-2.653-1.636-.98-.874-1.64-1.953-1.832-2.282-.19-.33-.02-.508.145-.671.149-.147.33-.384.495-.577.165-.192.22-.33.33-.55.11-.22.055-.413-.028-.577-.082-.165-.736-1.774-1.009-2.434-.267-.643-.539-.556-.736-.566l-.627-.01c-.218 0-.573.082-.873.413-.3.33-1.146 1.118-1.146 2.724 0 1.605 1.169 3.159 1.332 3.379.165.22 2.3 3.51 5.573 4.924.778.337 1.387.538 1.86.689.782.248 1.493.213 2.055.129.626-.094 1.951-.798 2.224-1.57.273-.771.273-1.431.191-1.571-.082-.14-.298-.223-.627-.388z"/></svg>
   </a>
   <button id="btnScrollUp" class="btn-scrollup btn-float" title="الرجوع للأعلى">▲</button>
@@ -548,6 +579,27 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 <footer>© 2026 المستشار عبدالاله بدوي · جميع الحقوق محفوظة · الرياض، المملكة العربية السعودية</footer>
 
 <script>
+/* ===== Image Proof Modal — Cinematic ===== */
+var imgMap={
+  roi:{src:'https://i.postimg.cc/3xKPWffL/hmlt-al-ayd-ly-alastthmar-snab-shat.png'},
+  dashboard:{src:'https://i.postimg.cc/dQZvKfg4/lwht-thkm.jpg'}
+};
+function openImgProof(type,caption){
+  var data=imgMap[type];if(!data)return;
+  var img=document.getElementById('iModalImg');
+  img.src='';
+  document.getElementById('iModalCaption').textContent=caption||'';
+  document.getElementById('iModalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  img.src=data.src;
+}
+function closeImgProof(){
+  document.getElementById('iModalImg').src='';
+  document.getElementById('iModalOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeVModal();closeImgProof();}});
+
 /* ===== Lead Form ===== */
 function openLead(){
   document.getElementById('leadFormOverlay').classList.add('open');
@@ -557,7 +609,7 @@ function openLead(){
 function closeLead(){document.getElementById('leadFormOverlay').classList.remove('open');}
 document.getElementById('leadFormOverlay').addEventListener('click',function(e){if(e.target===this)closeLead();});
 
-/* ===== Submit — Google Apps Script & CRM Webhook Integrated ===== */
+/* ===== Submit — Google Apps Script only ===== */
 function submitLead(){
   var name=document.getElementById('leadName').value.trim();
   var phone=document.getElementById('leadPhone').value.trim().replace(/\D/g,'');
@@ -565,48 +617,22 @@ function submitLead(){
   if(!name){document.getElementById('leadName').style.borderColor='#C0392B';document.getElementById('leadName').focus();return;}
   if(phone.length<9){document.getElementById('leadPhone').style.borderColor='#C0392B';document.getElementById('leadPhone').focus();return;}
   var waPhone=phone.startsWith('0')?'966'+phone.slice(1):phone;
-  
-  // 1. إرسال إلى Google Apps Script الأصلي للأرشفة
-  var urlGas="https://script.google.com/macros/s/AKfycbxjKlpJoudT_kq7U8_Dy-Bax85-589Q2KJLTLXbUb_JLzp5q7E0q1WqsmedC_T3PHZi/exec";
+  var url="https://script.google.com/macros/s/AKfycbxjKlpJoudT_kq7U8_Dy-Bax85-589Q2KJLTLXbUb_JLzp5q7E0q1WqsmedC_T3PHZi/exec";
   var formData=new FormData();
   formData.append("name",name);
   formData.append("phone",waPhone);
   formData.append("project_type",project);
-  
-  // 2. إرسال فوري إلى لوحة تحكم CRM النواة الرباعية المحمية
-  var urlCrm="https://ais-dev-hw3no77g6xtm7y6vz5ox6d-83792633503.europe-west3.run.app/api/leads";
-  var payloadCrm = {
-    name: name,
-    phone: waPhone,
-    project: project,
-    source: "صفحة الهبوط (budawim.com)"
-  };
-
-  // معالجة متوازية فورية لضمان عدم حدوث بطء تفاديًا لمشاكل الأداء
-  Promise.allSettled([
-    fetch(urlGas, { method: "POST", body: formData }),
-    fetch(urlCrm, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payloadCrm)
+  fetch(url,{method:"POST",body:formData})
+    .then(r=>r.text())
+    .then(()=>{
+      document.getElementById('leadFormContent').style.display='none';
+      document.getElementById('leadSuccess').style.display='block';
+      showToast("✅ تم التسجيل — سيتواصل معك المستشار قريباً");
+      var txt=encodeURIComponent('أهلاً المستشار عبدالاله، أنا '+name+' أرغب في التشخيص المجاني بخصوص: '+project);
+      setTimeout(()=>window.open('https://wa.me/966533140328?text='+txt,'_blank'),300);
     })
-  ]).then(function(results) {
-    // تبديل واجهة العميل لإظهار شاشة النجاح
-    document.getElementById('leadFormContent').style.display='none';
-    document.getElementById('leadSuccess').style.display='block';
-    showToast("✅ تم التسجيل — سيتواصل معك المستشار قريباً");
-    
-    // إرسال لـ WhatsApp وفتح المحادثة بعد مهلة سريعة للمستخدم
-    var txt=encodeURIComponent('أهلاً المستشار عبدالاله، أنا '+name+' أرغب في التشخيص المجاني بخصوص: '+project);
-    setTimeout(()=>window.open('https://wa.me/966533140328?text='+txt,'_blank'),300);
-  }).catch(function(err) {
-    console.error("خطأ حوكمة الربط والأرشفة:", err);
-    // حالة دفاعية لإتمام تجربة العميل حتى لو واجهت الاستجابة الخارجية خطأ مؤقت
-    document.getElementById('leadFormContent').style.display='none';
-    document.getElementById('leadSuccess').style.display='block';
-  });
+    .catch(()=>{alert("حدث خطأ أثناء إرسال البيانات");});
 }
-
 function openWhatsAppDirect(){window.open('https://wa.me/966533140328','_blank');}
 function showToast(msg){
   var t=document.getElementById('statusToast');
