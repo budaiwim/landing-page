@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>النواة الرباعية | لوحة التحكم المركزية المتكاملة</title>
+<link href="https://fonts.googleapis.com/css2?family=Lemonada:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #8B6914; --gold-bg: #F5EDD6; --gold-mid: #C9A84C; --gold-border: #E2C97A;
+    --page: #FAFAF8; --white: #FFFFFF; --dark: #1A1409; --muted: #6B5E3F; --border: #E8E0CC;
+    --success: #27AE60; --danger: #C0392B; --info: #2980B9; --warning: #F39C12;
+    --sidebar-width: 280px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Lemonada', sans-serif; background: var(--page); color: var(--dark); display: flex; min-height: 100vh; overflow-x: hidden; }
+  
+  /* هيكل لوحة التحكم الجانبية */
+  .sidebar { width: var(--sidebar-width); background: var(--dark); color: var(--white); padding: 2rem 1rem; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; right: 0; z-index: 100; border-left: 2px solid var(--gold-mid); }
+  .sidebar .brand { text-align: center; margin-bottom: 2.5rem; border-bottom: 1px solid var(--muted); padding-bottom: 1.5rem; }
+  .sidebar .brand h2 { font-size: 18px; color: var(--gold-border); font-weight: 700; }
+  .sidebar .brand p { font-size: 10px; color: var(--gold-bg); margin-top: 5px; }
+  
+  .nav-menu { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+  .nav-item { display: flex; align-items: center; padding: 12px 15px; color: #FAF8F5; text-decoration: none; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.3s; background: none; border: none; text-align: right; width: 100%; font-family: 'Lemonada'; }
+  .nav-item:hover, .nav-item.active { background: var(--gold); color: var(--white); font-weight: 700; padding-right: 22px; }
+  
+  /* الحاوية الرئيسية للمحتوى */
+  .main-content { margin-right: var(--sidebar-width); flex: 1; padding: 2.5rem; width: calc(100% - var(--sidebar-width)); transition: all 0.3s; }
+  
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid var(--gold-mid); padding-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
+  h1 { font-size: 18px; color: var(--dark); }
+  h1 span { color: var(--gold); }
+  .header-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* النوافذ والأقسام الرئيسية */
+  .system-section { display: none; animation: fadeIn 0.4s ease-in-out; }
+  .system-section.active-section { display: block; }
+  @keyframes slideNotif { from { transform:translateX(-50%) translateY(-20px);opacity:0; } to { transform:translateX(-50%) translateY(0);opacity:1; } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* كروت الـ KPIs المشتركة المتقدمة */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); padding: 1.4rem; border-radius: 12px; position: relative; box-shadow: 0 4px 10px rgba(139,105,20,0.04); overflow: hidden; }
+  .stat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:4px; background: var(--gold-mid); }
+  .stat-card.kpi-success::after { background: var(--success); }
+  .stat-card.kpi-info::after { background: var(--info); }
+  .stat-card.kpi-danger::after { background: var(--danger); }
+  .stat-card.kpi-warning::after { background: var(--warning); }
+  .stat-card h3 { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .stat-card p { font-size: 24px; font-weight: 700; color: var(--dark); }
+  .stat-card .sub-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; display: block; }
+
+  /* لوحات التحكم والنماذج والجداول */
+  .control-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+  .filter-bar { background: var(--gold-bg); padding: 0.75rem 1.2rem; border-radius: 8px; border: 1px solid var(--border); display: flex; gap: 1rem; align-items: center; flex: 1; min-width: 300px; }
+  .filter-bar input, .filter-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Lemonada'; font-size: 11px; background: var(--white); }
+  
+  .btn-gold { background: var(--gold); color: #FFF8E7; padding: 10px 20px; border-radius: 8px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; font-family: 'Lemonada'; transition: background 0.2s; text-decoration: none; display: inline-block; text-align: center; }
+  .btn-gold:hover { background: #3D2E0A; }
+  .btn-outline { background: transparent; color: var(--gold); border: 1.5px solid var(--gold-border); padding: 8px 16px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Lemonada'; }
+  .btn-outline:hover { background: var(--gold-bg); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(192,57,43,0.3); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: 'Lemonada'; font-size: 10px; }
+
+  .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 2rem; }
+  table { width: 100%; border-collapse: collapse; text-align: right; font-size: 11.5px; }
+  th, td { padding: 1rem; border-bottom: 1px solid var(--border); }
+  th { background: #F2EDE0; color: var(--dark); font-weight: 700; font-size: 11px; }
+  tr:hover { background: #FAF8F5; }
+  
+  .badge { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 600; color: #fff; display: inline-block; text-align: center; }
+  .badge-in, .status-won { background: var(--success); }
+  .badge-out, .status-lost { background: var(--danger); }
+  .status-new { background: var(--info); }
+  .status-progress { background: var(--warning); }
+  .link-code { background: #EFEFEF; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #333; }
+
+  /* النوافذ المنبثقة للعمليات وإضافة البيانات */
+  .modal { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-content { background: var(--white); border: 2px solid var(--gold-border); border-radius: 14px; width: 100%; max-width: 550px; padding: 2rem; position: relative; animation: slideDown 0.3s ease; }
+  @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .close-modal { position: absolute; left: 1.5rem; top: 1.5rem; font-size: 1.5rem; cursor: pointer; color: var(--muted); }
+  
+  .form-box { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .box-title { font-size: 12px; font-weight: 700; color: var(--gold); margin-bottom: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  .form-group { margin-bottom: 1rem; text-align: right; }
+  .form-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Lemonada'; font-size: 11px; background: var(--white); }
+
+  .layout-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem; }
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  @media (max-width: 900px) { .layout-grid, .setup-grid { grid-template-columns: 1fr; } }
+
+  /* الرسوم البيانية التفاعلية ومؤشرات الأداء */
+  .analytics-section { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  @media (max-width: 900px) { .analytics-section { grid-template-columns: 1fr; } }
+  .chart-box { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+  .bar-container { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem; }
+  .bar-row { display: grid; grid-template-columns: 120px 1fr 50px; align-items: center; gap: 1rem; }
+  .bar-lbl { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { background: #F0EFEA; height: 12px; border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--gold-mid); border-radius: 6px; width: 0%; transition: width 0.6s ease; }
+
+  /* الألسنة الداخلية للتنقل الفرعي */
+  .nav-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  .tab-btn { background: none; border: none; padding: 10px 20px; font-family: 'Lemonada'; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--muted); border-radius: 6px; }
+  .tab-btn.active { background: var(--gold-bg); color: var(--gold); font-weight: 700; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* شاشات المعاينة للطباعة والتصدير */
+  .preview-wrapper { display: none; background: #FFFFFF; max-width: 850px; margin: 0 auto; padding: 40px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative; z-index: 50; }
+  .doc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--gold); padding-bottom: 20px; margin-bottom: 25px; }
+  .doc-logo-area h2 { font-size: 22px; color: var(--dark); font-weight: 700; }
+  .doc-logo-area h2 span { color: var(--gold); }
+  .doc-meta-area { text-align: left; font-size: 11px; color: var(--muted); line-height: 1.8; }
+  .doc-parties { display: flex; justify-content: space-between; background: #FAF8F5; border: 1px solid var(--border); padding: 15px; border-radius: 6px; margin-bottom: 25px; font-size: 11px; }
+  .doc-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+  .doc-table th, .doc-table td { border: 1px solid var(--border); padding: 12px; font-size: 12px; }
+  .doc-table th { background: #F2EDE0; font-weight: bold; color: var(--dark); }
+  .doc-summary-wrapper { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+  .doc-summary-table { width: 300px; border-collapse: collapse; }
+  .doc-summary-table td { padding: 8px 12px; border: 1px solid var(--border); font-size: 11px; }
+  .doc-terms { border-top: 1px dashed var(--gold-border); padding-top: 15px; font-size: 10.5px; color: var(--muted); line-height: 1.8; }
+  .doc-signatures { margin-top: 50px; display: flex; justify-content: space-between; font-size: 11px; text-align: center; }
+
+  .rep-header { background: #1A1409; color: #F5EDD6; padding: 20px; border-bottom: 4px solid var(--gold); border-radius: 6px; margin-bottom: 20px; text-align: center; }
+  .rep-title { font-size: 18px; font-weight: bold; color: var(--gold-border); }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .sidebar, .no-print, header, .control-panel, .control-bar, .nav-tabs, .layout-grid, .setup-grid, .crm-table-wrap, .table-container, .crm-stats, .analytics-section, .kpi-grid, .charts-layout { display: none !important; }
+    .main-content { margin-right: 0 !important; width: 100% !important; padding: 0 !important; }
+    .preview-wrapper { display: block !important; border: none !important; box-shadow: none !important; padding: 0 !important; max-width: 100% !important; }
+  }
+</style>
+  <script>
+    // =================== Google Apps Script Config ===================
+    // ضع هنا رابط الـ Web App بعد نشره من Google Apps Script
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJtRIa6PBEXR9xb4EU6ZxHIavWvJ5y0jsIYXHcUCqESGnUJo-Tx5XSZ6ZVk-NxGlay/exec";
+    // =================================================================
+  </script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">
+    <h2>النواة الرباعية</h2>
+    <p>مجموعة الأنظمة الاستشارية الموحدة</p>
+  </div>
+  <nav class="nav-menu">
+    <button class="nav-item active" onclick="switchSection('crmSection')">إدارة علاقات العملاء & KPIs</button>
+    <button class="nav-item" onclick="switchSection('affiliateSection')">التسويق بالعمولة والتقارير</button>
+    <button class="nav-item" onclick="switchSection('quotesSection')">منظومة عروض الأسعار التنفيذية</button>
+    <button class="nav-item" onclick="switchSection('accountingSection')">النظام المحاسبي والفواتير</button>
+    <button class="nav-item" onclick="switchSection('analyticsDashboardSection')" style="color: var(--gold-border); border-top: 1px solid var(--muted); margin-top: 5px; padding-top: 15px;">📊 لوحة التحليلات والمؤشرات المركزية</button>
+  </nav>
+  <div style="text-align: center; font-size: 9px; color: var(--muted); margin-top: auto; border-top: 1px solid var(--muted); padding-top: 1rem;">
+    المستشار عبد الإله بدوي &copy; 2026
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div id="crmSection" class="system-section active-section">
+    <header>
+      <div>
+        <h1>نظام إدارة علاقات العملاء المتكامل & KPIs | <span>النواة الرباعية</span></h1>
+        <p class="header-desc">متابعة العملاء المحتملين، رصد حالات طلبات الاستشارة وجلسات التشخيص الاستراتيجية</p>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card kpi-info">
+        <h3>إجمالي العملاء المقيّدين</h3>
+        <p id="crmTotal">0</p>
+        <span class="sub-lbl">في قاعدة البيانات المحلية</span>
+      </div>
+      <div class="stat-card kpi-warning">
+        <h3>جلسات التشخيص المستمرة</h3>
+        <p id="crmProgress">0</p>
+        <span class="sub-lbl">قيد المتابعة والدراسة</span>
+      </div>
+      <div class="stat-card kpi-success">
+        <h3>المشاريع المغلقة (Won)</h3>
+        <p id="crmWon">0</p>
+        <span class="sub-lbl">تم التعاقد وبدء الحوكمة</span>
+      </div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="chart-box">
+        <h4 class="box-title">توزيع المشاريع حسب طبيعة الاستشارة</h4>
+        <div class="bar-container" id="crmProjectChart"></div>
+      </div>
+      <div class="chart-box">
+        <h4 class="box-title">معدل التحويل الكلي (%)</h4>
+        <div style="text-align: center; padding: 2rem 0;">
+          <h2 style="font-size: 36px; color: var(--gold);" id="crmConversionRate">0%</h2>
+          <p style="font-size: 10px; color: var(--muted); margin-top: 10px;">نسبة المشاريع الناجحة إلى الإجمالي</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="filter-bar">
+        <input type="text" id="crmSearch" placeholder="ابحث باسم العميل أو جواله...">
+        <select id="crmFilterStatus" onchange="renderCRMTable()">
+          <option value="">كل الحالات التشغيلية</option>
+          <option value="جديد">جديد / طلب استشارة</option>
+          <option value="قيد المتابعة">جلسة تشخيص ومتابعة</option>
+          <option value="مغلق ناجح">تم التعاقد (Won)</option>
+          <option value="مغلق مستبعد">مستبعد (Lost)</option>
+        </select>
+      </div>
+      <button class="btn-gold" onclick="openCustomerModal()">+ قيد عميل جديد</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>تاريخ القيد</th>
+            <th>اسم العميل المكرم</th>
+            <th>رقم الجوال الفوري</th>
+            <th>طبيعة المشروع / الاستشارة</th>
+            <th>حالة المتابعة</th>
+            <th class="no-print">إجراءات الحوكمة</th>
+          </tr>
+        </thead>
+        <tbody id="crmTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="affiliateSection" class="system-section">
+    <header>
+      <div>
+        <h1>لوحة تحكم نظام التسويق بالعمولة والتقارير التنفيذية | <span>النواة الرباعية</span></h1>
+        <p class="header-desc">تتبع أداء المسوقين والشركاء الاستراتيجيين، واحتساب العمولات بدقة حوكمية متناهية</p>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card kpi-info">
+        <h3>شبكة الشركاء المعتمدين</h3>
+        <p id="affTotalCount">0</p>
+      </div>
+      <div class="stat-card kpi-warning">
+        <h3>إجمالي النقرات المستقطبة</h3>
+        <p id="affTotalClicks">0</p>
+      </div>
+      <div class="stat-card kpi-success">
+        <h3>إجمالي المبيعات المحققة</h3>
+        <p id="affTotalSalesTxt">0.00 ر.س</p>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="filter-bar">
+        <input type="text" id="affiliateSearch" placeholder="ابحث عن مسوق بالاسم أو الكود...">
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn-outline" onclick="printAffiliateReport()">تصدير تقرير الأداء الفاخر</button>
+        <button class="btn-gold" onclick="openAffiliateModal()">+ إضافة شريك تسويقي</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>اسم الشريك / المسوق</th>
+            <th>معرّف الرابط (Slug)</th>
+            <th>عدد النقرات</th>
+            <th>التحويلات الناجحة</th>
+            <th>إجمالي المبيعات</th>
+            <th>العمولة المستحقة</th>
+            <th class="no-print">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="affiliateTableBody"></tbody>
+      </table>
+    </div>
+
+    <div id="reportPrintView" class="preview-wrapper">
+      <button class="btn-outline no-print" style="position: absolute; left: 20px; top: 20px;" onclick="closeAffPreview()">إغلاق المعاينة</button>
+      <button class="btn-gold no-print" style="position: absolute; left: 160px; top: 20px;" onclick="window.print()">طباعة التقرير / PDF</button>
+      <div class="rep-header">
+        <div class="rep-title">وثيقة تقرير الأداء التنفيذي الشامل لشراكات التسويق</div>
+        <p style="font-size: 11px; margin-top: 5px;">النواة الرباعية للاستشارات الإدارية والتسويقية</p>
+      </div>
+      <div style="margin-bottom: 20px; font-size: 11px;" id="repMetaDate"></div>
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>اسم المسوق الشريك</th>
+            <th>النقرات</th>
+            <th>التحويلات</th>
+            <th>حجم المبيعات المحقق</th>
+            <th>العمولة المستحقة</th>
+          </tr>
+        </thead>
+        <tbody id="repPrintTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="quotesSection" class="system-section">
+    <header>
+      <div>
+        <h1>نظام توليد عروض الأسعار التنفيذية المحوكمة | <span>النواة الرباعية</span></h1>
+        <p class="header-desc">صياغة عروض الأسعار الاستشارية الرسمية المعتمدة للشركات والجهات النخبوية</p>
+      </div>
+    </header>
+
+    <div id="quoteEditorView">
+      <div class="setup-grid">
+        <div class="form-box">
+          <h4 class="box-title">بيانات الوثيقة المرجعية</h4>
+          <div class="form-group"><label>رقم العرض المرجعي (Reference)</label><input type="text" id="quoteRef" value="Q-2026-001"></div>
+          <div class="form-group"><label>فترة الصلاحية الفنية والمالية</label><input type="text" id="quoteValidity" value="15 يوماً من تاريخ الصادر"></div>
+          <div class="form-group"><label>شروط وآلية الدفع والحوكمة</label><textarea id="quoteTerms" rows="3">50% مقدم عند التعميد و 50% عند تسليم التقارير التشخيصية النهائية ووصفة التحول.</textarea></div>
+        </div>
+        <div class="form-box">
+          <h4 class="box-title">بيانات الطرف الثاني (العميل المستهدف)</h4>
+          <div class="form-group"><label>اسم المنشأة / العميل</label><input type="text" id="clientName" value="شركة النخبة للتجارة والاستثمار"></div>
+          <div class="form-group"><label>الممثل المخول أو الشخص المسؤول</label><input type="text" id="clientContact" value="سعادة المدير التنفيذي"></div>
+          <div class="form-group"><label>بيانات وعنوان العميل الإضافية</label><input type="text" id="clientInfo" value="الرياض، المملكة العربية السعودية"></div>
+        </div>
+      </div>
+
+      <div class="form-box">
+        <h4 class="box-title">بناء الخدمات وعناصر الاستشارة الفنية</h4>
+        <div class="setup-grid" style="grid-template-columns: 3fr 1fr 1fr;">
+          <div class="form-group"><label>وصف الخدمة الاستشارية / بند العمل الفني</label><input type="text" id="itemDesc" placeholder="مثال: جلسة تشخيص استراتيجي وإعادة هيكلة للحوكمة الرقمية"></div>
+          <div class="form-group"><label>القيمة الأساسية</label><input type="number" id="itemPrice" placeholder="0.00"></div>
+          <div class="form-group"><label style="visibility:hidden;">إجراء</label><button class="btn-gold" style="width:100%;" onclick="addQuoteItem()">+ إدراج البند</button></div>
+        </div>
+        
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>م</th>
+                <th>تفصيل الخدمة الاستشارية ونطاق العمل المدرج</th>
+                <th>الصافي الفردي</th>
+                <th>إجراء الحذف</th>
+              </tr>
+            </thead>
+            <tbody id="quoteItemsTableBody"></tbody>
+          </table>
+        </div>
+        <div style="text-align: left;">
+          <button class="btn-gold" style="padding: 12px 30px;" onclick="generateQuotePreview()">توليد ومعاينة الوثيقة الفاخرة</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="quotePrintPreviewView" class="preview-wrapper">
+      <button class="btn-outline no-print" style="position: absolute; left: 20px; top: 20px;" onclick="backToQuoteEditor()">العودة للمحرر</button>
+      <button class="btn-gold no-print" style="position: absolute; left: 160px; top: 20px;" onclick="window.print()">طباعة العرض / تصدير PDF</button>
+      
+      <div class="doc-header">
+        <div class="doc-logo-area">
+          <h2>النواة<span>الرباعية</span></h2>
+          <p style="font-size: 10px; color: var(--muted); letter-spacing: 1px;">TOTAL BUSINESS FORTIFICATION</p>
+        </div>
+        <div class="doc-meta-area">
+          <p><strong>وثيقة:</strong> عرض سعر استشاري تنفيذي</p>
+          <p><strong>الرقم المرجعي:</strong> <span id="lblQuoteRef"></span></p>
+          <p><strong>التاريخ:</strong> <span id="lblQuoteDate"></span></p>
+        </div>
+      </div>
+
+      <div class="doc-parties">
+        <div class="party-box">
+          <p><strong>الطرف الأول (المستشار ومزود الخدمة):</strong></p>
+          <p>المستشار عبد الإله بدوي وفريقه الاستشاري المتكامل</p>
+          <p>الرياض، المملكة العربية السعودية</p>
+        </div>
+        <div class="party-box" style="text-align: left;">
+          <p><strong>الطرف الثاني (العميل المكرم):</strong></p>
+          <p id="lblClientName"></p>
+          <p id="lblClientInfo"></p>
+        </div>
+      </div>
+
+      <p style="font-size: 11px; margin-bottom: 15px; line-height: 1.8;">بناءً على التفاهمات المشتركة لتطوير وحوكمة أعمال الطرف الثاني، يسعدنا تقديم العرض الفني والمالي المقيد بالبنود والخدمات الاستشارية التالية:</p>
+
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">م</th>
+            <th>بيان نطاق العمل الاستشاري والحلول الاستراتيجية</th>
+            <th style="width: 150px; text-align: left;">القيمة (ر.س)</th>
+          </tr>
+        </thead>
+        <tbody id="lblQuoteItemsBody"></tbody>
+      </table>
+
+      <div class="doc-summary-wrapper">
+        <table class="doc-summary-table">
+          <tr>
+            <td>المجموع الصافي الأساسي</td>
+            <td style="text-align: left; font-weight: bold;" id="lblSubTotal">0.00 ر.س</td>
+          </tr>
+          <tr>
+            <td>ضريبة القيمة المضافة (15%)</td>
+            <td style="text-align: left;" id="lblTaxAmount">0.00 ر.س</td>
+          </tr>
+          <tr style="background: #F2EDE0; font-weight: 700;">
+            <td>الإجمالي النهائي الشامل للضريبة</td>
+            <td style="text-align: left; color: var(--gold);" id="lblGrandTotal">0.00 ر.س</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="doc-terms">
+        <p><strong>الشروط والأحكام الاستشارية العامة وحوكمة المشروع:</strong></p>
+        <p>1. صلاحية العرض: <span id="lblQuoteValidity"></span></p>
+        <p>2. حوكمة الدفع: <span id="lblQuoteTerms"></span></p>
+        <p>3. يلتزم الطرف الأول بكافة معايير السرية المطلقة والتحصين الكامل لبيانات وأسرار أعمال الطرف الثاني طوال فترة الاتفاقية وما بعدها.</p>
+      </div>
+
+      <div class="doc-signatures">
+        <div>
+          <p><strong>اعتماد مزود الخدمة (الطرف الأول)</strong></p>
+          <p style="margin-top: 30px; font-weight: bold;">المستشار عبد الإله بدوي</p>
+        </div>
+        <div>
+          <p><strong>الموافقة والتعميد (الطرف الثاني)</strong></p>
+          <p style="margin-top: 30px; border-bottom: 1px dashed #aaa; width: 150px; margin-left: auto; margin-right: auto; height: 20px;"></p>
+          <p id="lblClientSignatureName" style="font-weight: bold; margin-top: 5px;"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="accountingSection" class="system-section">
+    <header>
+      <div>
+        <h1>النظام المحاسبي وإدارة الفواتير الضريبية | <span>النواة الرباعية</span></h1>
+        <p class="header-desc">حساب دقيق للمصروفات، الإيرادات، الأرباح الصافية، وإصدار الفواتير المتوافقة مع متطلبات الحوكمة</p>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card kpi-success">
+        <h3>إجمالي الإيرادات المقبوضة</h3>
+        <p id="totalIncomeTxt">0.00 ر.س</p>
+      </div>
+      <div class="stat-card kpi-danger">
+        <h3>إجمالي المصروفات التشغيلية</h3>
+        <p id="totalExpenseTxt" style="color: var(--danger);">0.00 ر.س</p>
+      </div>
+      <div class="stat-card kpi-info">
+        <h3>صافي الأداء المالي (الأرباح)</h3>
+        <p id="netProfitTxt" style="color: var(--info);">0.00 ر.س</p>
+      </div>
+    </div>
+
+    <div id="accountingDashboardView">
+      <div class="nav-tabs">
+        <button class="tab-btn active" id="btnTab1" onclick="switchAccTab(1)">إدارة القيود والمعاملات</button>
+        <button class="tab-btn" id="btnTab2" onclick="switchAccTab(2)">الفواتير الضريبية المستخرجة</button>
+      </div>
+
+      <div id="accTab1" class="tab-content active">
+        <div class="layout-grid">
+          <div class="form-box">
+            <h4 class="box-title">توجيه قيد مالي جديد</h4>
+            <div class="form-group">
+              <label>نوع العملية المالية</label>
+              <select id="accType">
+                <option value="إيراد">إيراد مقبوض (قيد مدين للخزينة)</option>
+                <option value="مصروف">مصروف تشغيلي (قيد دائن للخزينة)</option>
+              </select>
+            </div>
+            <div class="form-group"><label>البيان / الوصف التفصيلي</label><input type="text" id="accDesc" placeholder="مثال: دفعة عقد استشارة شركة النخبة"></div>
+            <div class="form-group"><label>المبلغ الأساسي (قبل الضريبة)</label><input type="number" id="accAmount" placeholder="0.00"></div>
+            <div class="form-group">
+              <label>حالة ضريبة القيمة المضافة (15%)</label>
+              <select id="accTaxStatus">
+                <option value="15">خاضع للضريبة القياسية (15%)</option>
+                <option value="0">معفى / غير خاضع للضريبة</option>
+              </select>
+            </div>
+            <button class="btn-gold" style="width: 100%;" onclick="addAccTransaction()">ترحيل وتحصين القيد المالي</button>
+          </div>
+          
+          <div class="table-wrap">
+            <h4 class="box-title" style="padding: 1rem 1rem 0 0;">دفتر الأستاذ والقيود المحدثة فوريًا</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>طبيعة القيد</th>
+                  <th>البيان والوصف</th>
+                  <th>الصافي</th>
+                  <th>الضريبة</th>
+                  <th>الإجمالي الشامل</th>
+                  <th class="no-print">العمليات</th>
+                </tr>
+              </thead>
+              <tbody id="accTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="accTab2" class="tab-content">
+        <div class="layout-grid" style="grid-template-columns: 1fr;">
+          <div class="table-wrap">
+            <h4 class="box-title" style="padding: 1rem 1rem 0 0;">الفواتير الضريبية المعتمدة المستخرجة بنظام النواة</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>الرقم التسلسلي للفاتورة</th>
+                  <th>تاريخ الإصدار</th>
+                  <th>اسم العميل</th>
+                  <th>البيان والنطاق</th>
+                  <th>الإجمالي الشامل</th>
+                  <th>معاينة الفاتورة ونظام الطباعة</th>
+                </tr>
+              </thead>
+              <tbody id="invoicesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="invoicePrintView" class="preview-wrapper">
+      <button class="btn-outline no-print" style="position: absolute; left: 20px; top: 20px;" onclick="closeInvoicePrint()">العودة للنظام المحاسبي</button>
+      <button class="btn-gold no-print" style="position: absolute; left: 180px; top: 20px;" onclick="window.print()">طباعة الفاتورة الفورية / PDF</button>
+      
+      <div class="doc-header">
+        <div class="doc-logo-area">
+          <h2>النواة<span>الرباعية</span></h2>
+          <p style="font-size: 10px; color: var(--muted); letter-spacing: 1px;">النظام المحاسبي المركزي الموحد</p>
+        </div>
+        <div class="doc-meta-area" style="text-align: left;">
+          <h3 style="color: var(--gold); font-size: 16px; font-weight: bold;">فاتورة ضريبية مبسطة</h3>
+          <p><strong>رقم الفاتورة المرجعي:</strong> <span id="pInvRef"></span></p>
+          <p><strong>تاريخ الإصدار والترصيد:</strong> <span id="pInvDate"></span></p>
+        </div>
+      </div>
+
+      <div class="inv-parties">
+        <div>
+          <p><strong>المنشأة الموردة (الطرف الأول):</strong></p>
+          <p style="font-weight: bold;">المستشار عبد الإله بدوي وفريقه الاستشاري المتكامل</p>
+          <p>الرقم الضريبي للمنشأة: 310245879600003</p>
+        </div>
+        <div style="text-align: left;">
+          <p><strong>العميل المكرم (الطرف الثاني):</strong></p>
+          <p style="font-weight: bold;" id="pInvClient"></p>
+        </div>
+      </div>
+
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>الخدمة الاستشارية / نطاق العمل المحقق</th>
+            <th style="text-align: left; width: 180px;">المبلغ الخاضع للضريبة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="pInvDesc"></td>
+            <td style="text-align: left; font-weight: bold;" id="pInvBasePrice">0.00 ر.س</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="doc-summary-wrapper">
+        <table class="doc-summary-table">
+          <tr>
+            <td>المجموع الفرعي (غير شامل الضريبة)</td>
+            <td style="text-align: left;" id="pSummarySub">0.00 ر.س</td>
+          </tr>
+          <tr>
+            <td>ضريبة القيمة المضافة (<span id="pSummaryTaxRate"></span>%)</td>
+            <td style="text-align: left;" id="pSummaryTaxAmount">0.00 ر.س</td>
+          </tr>
+          <tr style="background: #F2EDE0; font-weight: bold;">
+            <td>الإجمالي المستحق شامل الضريبة</td>
+            <td style="text-align: left; color: var(--gold);" id="pSummaryGrand">0.00 ر.س</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 20px; font-size: 10px; color: var(--muted); text-align: center;">
+        <p>تم ترحيل هذه الفاتورة وإصدارها آليًا عبر الأنظمة المدمجة المركزية للنواة الرباعية للحوكمة والاستشارات.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="analyticsDashboardSection" class="system-section">
+    <header>
+      <div>
+        <h1>لوحة التحليلات والمؤشرات المركزية المتقدمة | <span>النواة الرباعية</span></h1>
+        <p class="header-desc">تحليل الأداء الشامل عبر محاور الحوكمة، كفاءة التسويق والتدفقات المالية التراكمية</p>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card kpi-success">
+        <h3>معدل العائد على المبيعات (ROS)</h3>
+        <p id="kpiRos">0%</p>
+        <span class="sub-lbl" id="kpiRosDesc">صافي الربح مقابل الإيراد الكلي</span>
+      </div>
+      <div class="stat-card kpi-info">
+        <h3>متوسط القيمة التعاقدية (ACV)</h3>
+        <p id="kpiAcv">0 ر.س</p>
+        <span class="sub-lbl">لكل صفقة ناجحة (Won)</span>
+      </div>
+      <div class="stat-card kpi-warning">
+        <h3>كفاءة إنتاجية التسويق (APE)</h3>
+        <p id="kpiApe">0 ر.س</p>
+        <span class="sub-lbl">حجم العائد المقابل لكل نقرة شريكة</span>
+      </div>
+      <div class="stat-card kpi-danger">
+        <h3>معدل النزيف المالي (Expense Ratio)</h3>
+        <p id="kpiExpenseRatio">0%</p>
+        <span class="sub-lbl">نسبة المصروفات من الدخل الكلي</span>
+      </div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="chart-box">
+        <h4 class="box-title">المقارنة الهيكلية للأداء المالي الفوري (ر.س)</h4>
+        <div class="bar-container" id="financialComparisonChart">
+          </div>
+      </div>
+      <div class="chart-box">
+        <h4 class="box-title">تحليل فاعلية قنوات المتابعة الرقمية</h4>
+        <div style="padding: 1rem 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size:11px;">
+            <span>معدل انضباط الصفقات الناجحة:</span>
+            <strong id="lblCrmWonPercent" style="color:var(--success);">0%</strong>
+          </div>
+          <div class="bar-track" style="margin-bottom: 20px;"><div id="fillCrmWonPercent" class="bar-fill" style="background:var(--success); width:0%;"></div></div>
+
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size:11px;">
+            <span>نسبة الاستشارات المستبعدة:</span>
+            <strong id="lblCrmLostPercent" style="color:var(--danger);">0%</strong>
+          </div>
+          <div class="bar-track"><div id="fillCrmLostPercent" class="bar-fill" style="background:var(--danger); width:0%;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="customerModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeCustomerModal()">&times;</span>
+    <h3 class="box-title" id="crmModalTitle">تقييد عميل جديد بالنواة الرباعية</h3>
+    <form id="crmForm">
+      <input type="hidden" id="crmEditIndex">
+      <div class="form-group"><label>اسم العميل الكريم / المنشأة</label><input type="text" id="formName" required></div>
+      <div class="form-group"><label>رقم الجوال (مع كود الدولة للتواصل الفوري)</label><input type="text" id="formPhone" placeholder="9665xxxxxxxx" required></div>
+      <div class="form-group">
+        <label>طبيعة وحزمة الاستشارة</label>
+        <select id="formProject">
+          <option value="استشارة وحوكمة رقمية">استشارة وحوكمة رقمية</option>
+          <option value="تطوير هوية وتسويق استراتيجي">تطوير هوية وتسويق استراتيجي</option>
+          <option value="تشخيص وحوكمة مالية">تشخيص وحوكمة مالية</option>
+          <option value="مظلة استشارية متكاملة">مظلة استشارية متكاملة</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>الحالة التشغيلية المبدئية</label>
+        <select id="formStatus">
+          <option value="جديد">جديد / طلب استشارة مبدئي</option>
+          <option value="قيد المتابعة">قيد جلسات التشخيص والمتابعة</option>
+          <option value="مغلق ناجح">تم التعاقد والاعتماد (Won)</option>
+          <option value="مغلق مستبعد">مستبعد نهائيًا (Lost)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-gold" style="width: 100%;">حفظ وتقييد البيانات في النظام</button>
+    </form>
+  </div>
+</div>
+
+<div id="affiliateModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeAffiliateModal()">&times;</span>
+    <h3 class="box-title">إضافة شريك استراتيجي للشبكة</h3>
+    <form id="affiliateForm">
+      <input type="hidden" id="affiliateEditIndex">
+      <div class="form-group"><label>اسم الشريك / المسوق</label><input type="text" id="affName" required></div>
+      <div class="form-group"><label>المعرّف الخاص بالرابط البسيط (Slug)</label><input type="text" id="affSlug" placeholder="مثال: badawi10" required></div>
+      <div class="form-group"><label>عدد النقرات المبدئية (إن وجد)</label><input type="number" id="affClicks" value="0"></div>
+      <div class="form-group"><label>التحويلات / المبيعات الناجحة مبدئيًا</label><input type="number" id="affSalesCount" value="0"></div>
+      <div class="form-group"><label>إجمالي حجم المبيعات المحققة (ر.س)</label><input type="number" id="affTotalSales" value="0"></div>
+      <div class="form-group"><label>نسبة العمولة المعتمدة (%)</label><input type="number" id="affCommRate" value="10" required></div>
+      <button type="submit" class="btn-gold" style="width: 100%;">اعتماد الشريك وحفظ البيانات</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // حقن البيانات الوهمية المترابطة تلقائياً في المتصفح لتشغيل المؤشرات مباشرة
+  let defaultCustomers = [
+    { date: "2026-05-10", name: "شركة تطوير العقارية", phone: "966500000001", project: "مظلة استشارية متكاملة", status: "مغلق ناجح" },
+    { date: "2026-05-12", name: "مصنع الشرق للمنتجات الغذائية", phone: "966500000002", project: "استشارة وحوكمة رقمية", status: "مغلق ناجح" },
+    { date: "2026-05-14", name: "منصة سهم الابتكارية", phone: "966500000003", project: "تطوير هوية وتسويق استراتيجي", status: "قيد المتابعة" },
+    { date: "2026-05-15", name: "عيادات النخبة الطبية", phone: "966500000004", project: "تشخيص وحوكمة مالية", status: "مغلق مستبعد" }
+  ];
+
+  let defaultAffiliates = [
+    { name: "أ. خالد عبد الله (مستشار تقني شريك)", slug: "khaled20", clicks: 1200, salesCount: 2, totalSales: 140000, commissionRate: 10 },
+    { name: "شركة ريادة للتسويق الرقمي", slug: "riyada_ads", clicks: 3500, salesCount: 0, totalSales: 0, commissionRate: 15 }
+  ];
+
+  let defaultTransactions = [
+    { ref: "INV-2026-1002", date: "12/05/2026", type: "إيراد", desc: "قيمة حزمة الحوكمة الرقمية (مصنع الشرق)", baseAmount: 50000, taxRate: 15, client: "مصنع الشرق للمنتجات الغذائية" },
+    { ref: "INV-2026-1001", date: "10/05/2026", type: "إيراد", desc: "الدفعة الأولى - عقد المظلة الاستشارية (شركة تطوير العقارية)", baseAmount: 90000, taxRate: 15, client: "شركة تطوير العقارية" },
+    { ref: "EXP-2026-2001", date: "13/05/2026", type: "مصروف", desc: "تكاليف ترخيص برمجيات الحوكمة وأدوات فحص الأنظمة الرقمية", baseAmount: 25000, taxRate: 15, client: "مصروفات تشغيلية وعامة" },
+    { ref: "EXP-2026-2002", date: "14/05/2026", type: "مصروف", desc: "أتعاب استشارية فرعية لفريق العمل المساعد في الهيكلة", baseAmount: 15000, taxRate: 0, client: "مصروفات تشغيلية وعامة" }
+  ];
+
+  let customers = JSON.parse(localStorage.getItem('four_core_crm_data')) || defaultCustomers;
+  let affiliates = JSON.parse(localStorage.getItem('four_core_affiliates_data')) || defaultAffiliates;
+  let transactions = JSON.parse(localStorage.getItem('four_core_accounting_data')) || defaultTransactions;
+  let quoteItems = [];
+
+  // حفظ البيانات المبدئية في التخزين المحلي فوراً إذا لم تكن موجودة
+  if(!localStorage.getItem('four_core_crm_data')) localStorage.setItem('four_core_crm_data', JSON.stringify(customers));
+  if(!localStorage.getItem('four_core_affiliates_data')) localStorage.setItem('four_core_affiliates_data', JSON.stringify(affiliates));
+  if(!localStorage.getItem('four_core_accounting_data')) localStorage.setItem('four_core_accounting_data', JSON.stringify(transactions));
+
+  function switchSection(sectionId) {
+    document.querySelectorAll('.system-section').forEach(sec => sec.classList.remove('active-section'));
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    
+    document.getElementById(sectionId).classList.add('active-section');
+    event.currentTarget.classList.add('active');
+    
+    document.getElementById('reportPrintView').style.display = 'none';
+    document.getElementById('quotePrintPreviewView').style.display = 'none';
+    document.getElementById('invoicePrintView').style.display = 'none';
+    
+    if(sectionId === 'crmSection') initCRM();
+    if(sectionId === 'affiliateSection') initAffiliateSystem();
+    if(sectionId === 'accountingSection') initAccountingSystem();
+    if(sectionId === 'analyticsDashboardSection') calculateAdvancedKPIs();
+  }
+
+  // ---------------- MODULE 1: CRM LOGIC ----------------
+
+  // =================== Google Apps Script Operations ===================
+
+  // دالة مساعدة: حفظ احتياطي محلي
+  function _saveLocal(key, data) {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+  }
+
+  // دالة مساعدة: جلب احتياطي محلي
+  function _getLocal(key) {
+    try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : null; } catch(e) { return null; }
+  }
+
+  // 1. جلب العملاء من Google Sheets
+  async function fetchLeadsFromDB() {
+    try {
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT")) {
+        throw new Error("رابط Google Script غير مكوّن بعد.");
+      }
+      const res = await fetch(GOOGLE_SCRIPT_URL + "?action=getLeads", { method: 'GET' });
+      if (!res.ok) throw new Error("فشل الاتصال بخادم Google.");
+      const data = await res.json();
+      const fetched = data.map(r => ({
+        id: r.id || (Date.now() + Math.random()),
+        date: r.timestamp ? new Date(r.timestamp).toLocaleDateString('ar-SA') : (r.date || new Date().toLocaleDateString('ar-SA')),
+        name: r.name || "عميل بدون اسم",
+        phone: r.phone || "—",
+        project: r.project_type || r.project || "غير محدد",
+        status: r.status || "جديد",
+        source: r.source || "صفحة الهبوط"
+      }));
+      // دمج ذكي: الأولوية لبيانات الشيت، مع الحفاظ على أي تعديلات حالة يدوية
+      const localMap = {};
+      customers.forEach(c => { if(c.id) localMap[c.id] = c.status; });
+      fetched.forEach(f => { if(localMap[f.id] && localMap[f.id] !== 'جديد') f.status = localMap[f.id]; });
+      // إضافة العملاء الجدد الواردين من الشيت مع التنبيه
+      const existingIds = customers.map(c => String(c.id));
+      fetched.forEach(f => {
+        if (!existingIds.includes(String(f.id))) showRealtimeNotification(f);
+      });
+      customers = fetched;
+      _saveLocal('four_core_crm_data', customers);
+      renderCRMTable();
+      if(typeof calculateAdvancedKPIs === 'function') calculateAdvancedKPIs();
+    } catch(err) {
+      console.warn("Google Script غير متاح، تشغيل وضع البيانات المحلية:", err.message);
+      const local = _getLocal('four_core_crm_data');
+      if (local && local.length) customers = local;
+      renderCRMTable();
+    }
+  }
+
+  // 2. إضافة عميل جديد لـ Google Sheets
+  async function addLeadToDB(lead) {
+    try {
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT")) return;
+      const formData = new FormData();
+      formData.append("name", lead.name);
+      formData.append("phone", lead.phone);
+      formData.append("project_type", lead.project || "إدخال يدوي من لوحة التحكم");
+      formData.append("status", lead.status || "جديد");
+      formData.append("source", lead.source || "يدوي");
+      await fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", body: formData });
+    } catch(err) {
+      console.warn("لم يتم مزامنة العميل سحابياً:", err.message);
+    }
+  }
+
+  // 3. نظام المراقبة الدورية (Polling بدلاً من Supabase Realtime)
+  let _lastLeadCount = 0;
+  function subscribeToLeads() {
+    // فحص أولي فوري
+    fetchLeadsFromDB();
+    // فحص دوري كل 5 دقائق
+    setInterval(fetchLeadsFromDB, 300000);
+  }
+
+  function showRealtimeNotification(lead) {
+    const n = document.createElement('div');
+    n.style.cssText = `
+      position:fixed;top:1rem;left:50%;transform:translateX(-50%);
+      background:#27AE60;color:#fff;padding:.85rem 1.75rem;
+      border-radius:10px;font-family:'Lemonada';font-size:12px;font-weight:700;
+      z-index:10000;box-shadow:0 4px 20px rgba(0,0,0,0.2);
+      animation:slideNotif .4s ease;white-space:nowrap;
+    `;
+    n.innerHTML = '🔔 عميل جديد من صفحة الهبوط: <strong>' + lead.name + '</strong> — ' + lead.project;
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 7000);
+  }
+
+  // ==========================================================
+  function initCRM() {
+    subscribeToLeads();
+  }
+  function openCustomerModal() {
+    document.getElementById('crmForm').reset();
+    document.getElementById('crmEditIndex').value = "";
+    document.getElementById('crmModalTitle').textContent = "تقييد عميل جديد بالنواة الرباعية";
+    document.getElementById('customerModal').style.display = 'flex';
+  }
+  function closeCustomerModal() { document.getElementById('customerModal').style.display = 'none'; }
+  
+  function editCustomer(idx) {
+    const c = customers[idx];
+    document.getElementById('crmEditIndex').value = idx;
+    document.getElementById('formName').value = c.name;
+    document.getElementById('formPhone').value = c.phone;
+    document.getElementById('formProject').value = c.project;
+    document.getElementById('formStatus').value = c.status;
+    document.getElementById('crmModalTitle').textContent = "تعديل بيانات الحوكمة للعميل";
+    document.getElementById('customerModal').style.display = 'flex';
+  }
+
+  document.getElementById('crmForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const idx = document.getElementById('crmEditIndex').value;
+    const name = document.getElementById('formName').value;
+    const phone = document.getElementById('formPhone').value.replace(/\D/g,'');
+    const project = document.getElementById('formProject').value;
+    const status = document.getElementById('formStatus').value;
+    const date = idx !== "" ? customers[idx].date : new Date().toISOString().slice(0, 10);
+
+    const dataObj = { date, name, phone, project, status, source: idx === "" ? "يدوي" : (customers[idx].source || "يدوي") };
+    if(idx === "") {
+      customers.unshift(dataObj);
+      // مزامنة العميل الجديد سحابياً مع Google Sheets
+      addLeadToDB(dataObj);
+    } else {
+      customers[idx] = dataObj;
+    }
+
+    _saveLocal('four_core_crm_data', customers);
+    closeCustomerModal();
+    renderCRMTable();
+  });
+
+  function deleteCustomer(index) {
+    if(confirm("هل أنت متأكد تماماً من حذف هذا العميل وسجل استشارته نهائياً؟")) {
+      customers.splice(index, 1);
+      _saveLocal('four_core_crm_data', customers);
+      renderCRMTable();
+    }
+  }
+
+  function openWhatsApp(phone, name) {
+    const txt = encodeURIComponent(`أهلاً بك أستاذ ${name}، معك المستشار عبدالإله بدوي بخصوص طلب الاستشارة وجلسة التشخيص الخاصة بمشروعك.`);
+    window.open(`https://wa.me/${phone}?text=${txt}`, '_blank');
+  }
+
+  function renderCRMTable() {
+    const q = document.getElementById('crmSearch').value.toLowerCase();
+    const fStatus = document.getElementById('crmFilterStatus').value;
+    const tbody = document.getElementById('crmTableBody');
+    tbody.innerHTML = '';
+
+    let total = customers.length, progress = 0, won = 0;
+    let projCounts = {};
+
+    customers.forEach((c, idx) => {
+      if(c.status === 'قيد المتابعة') progress++;
+      if(c.status === 'مغلق ناجح') won++;
+      projCounts[c.project] = (projCounts[c.project] || 0) + 1;
+
+      if(q && !c.name.toLowerCase().includes(q) && !c.phone.includes(q)) return;
+      if(fStatus && c.status !== fStatus) return;
+
+      let cls = 'status-new';
+      if(c.status === 'قيد المتابعة') cls = 'status-progress';
+      if(c.status === 'مغلق ناجح') cls = 'status-won';
+      if(c.status === 'مغلق مستبعد') cls = 'status-lost';
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${c.date}</td>
+          <td style="font-weight:600;">${c.name}</td>
+          <td>${c.phone}</td>
+          <td><span style="color:var(--gold); font-weight:600;">[ ${c.project} ]</span></td>
+          <td><span class="badge ${cls}">${c.status}</span></td>
+          <td class="no-print">
+            <button class="btn-outline" onclick="editCustomer(${idx})">تعديل</button>
+            <button class="btn-gold" style="padding:4px 8px; font-size:10px; background:#25D366;" onclick="openWhatsApp('${c.phone}', '${c.name}')">واتساب</button>
+            <button class="btn-danger" onclick="deleteCustomer(${idx})">حذف</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('crmTotal').textContent = total;
+    document.getElementById('crmProgress').textContent = progress;
+    document.getElementById('crmWon').textContent = won;
+    document.getElementById('crmConversionRate').textContent = total > 0 ? Math.round((won / total) * 100) + '%' : '0%';
+
+    const chart = document.getElementById('crmProjectChart');
+    chart.innerHTML = '';
+    const projs = ['استشارة وحوكمة رقمية', 'تطوير هوية وتسويق استراتيجي', 'تشخيص وحوكمة مالية', 'مظلة استشارية متكاملة'];
+    projs.forEach(p => {
+      let count = projCounts[p] || 0;
+      let pct = total > 0 ? (count / total) * 100 : 0;
+      chart.innerHTML += `
+        <div class="bar-row">
+          <div class="bar-lbl">${p}</div>
+          <div class="bar-track"><div class="bar-fill" style="width: ${pct}%"></div></div>
+          <div class="bar-lbl" style="text-align:left; font-weight:bold;">${count}</div>
+        </div>
+      `;
+    });
+  }
+  if(document.getElementById('crmSearch')) {
+    document.getElementById('crmSearch').addEventListener('input', renderCRMTable);
+  }
+
+  // ---------------- MODULE 2: AFFILIATE LOGIC ----------------
+  function initAffiliateSystem() { renderAffiliateTable(); }
+  function openAffiliateModal() {
+    document.getElementById('affiliateForm').reset();
+    document.getElementById('affiliateEditIndex').value = "";
+    document.getElementById('affiliateModal').style.display = 'flex';
+  }
+  function closeAffiliateModal() { document.getElementById('affiliateModal').style.display = 'none'; }
+
+  document.getElementById('affiliateForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const idx = document.getElementById('affiliateEditIndex').value;
+    const obj = {
+      name: document.getElementById('affName').value,
+      slug: document.getElementById('affSlug').value,
+      clicks: parseInt(document.getElementById('affClicks').value)||0,
+      salesCount: parseInt(document.getElementById('affSalesCount').value)||0,
+      totalSales: parseFloat(document.getElementById('affTotalSales').value)||0,
+      commissionRate: parseInt(document.getElementById('affCommRate').value)
+    };
+    if(idx === "") affiliates.unshift(obj); else affiliates[idx] = obj;
+    localStorage.setItem('four_core_affiliates_data', JSON.stringify(affiliates));
+    closeAffiliateModal();
+    initAffiliateSystem();
+  });
+
+  function editAffiliate(idx) {
+    const aff = affiliates[idx];
+    document.getElementById('affiliateEditIndex').value = idx;
+    document.getElementById('affName').value = aff.name; document.getElementById('affSlug').value = aff.slug;
+    document.getElementById('affClicks').value = aff.clicks; document.getElementById('affSalesCount').value = aff.salesCount;
+    document.getElementById('affTotalSales').value = aff.totalSales; document.getElementById('affCommRate').value = aff.commissionRate;
+    document.getElementById('affiliateModal').style.display = 'flex';
+  }
+
+  function deleteAffiliate(index) {
+    if(confirm("هل تريد حذف هذا المسوق بالكامل؟")) {
+      affiliates.splice(index, 1);
+      localStorage.setItem('four_core_affiliates_data', JSON.stringify(affiliates));
+      initAffiliateSystem();
+    }
+  }
+
+  function renderAffiliateTable() {
+    const searchVal = document.getElementById('affiliateSearch').value.toLowerCase();
+    const tbody = document.getElementById('affiliateTableBody');
+    tbody.innerHTML = '';
+    
+    let totalClicks = 0, totalSales = 0;
+    affiliates.forEach((aff, idx) => {
+      totalClicks += aff.clicks;
+      totalSales += aff.totalSales;
+      if(searchVal && !aff.name.toLowerCase().includes(searchVal) && !aff.slug.toLowerCase().includes(searchVal)) return;
+      let comm = (aff.totalSales * (aff.commissionRate / 100));
+
+      tbody.innerHTML += `
+        <tr>
+          <td style="font-weight:600; color:var(--dark);">${aff.name}</td>
+          <td><span class="link-code">?ref=${aff.slug}</span></td>
+          <td>${aff.clicks}</td>
+          <td><span class="badge status-won">${aff.salesCount} وعاء مبيعات</span></td>
+          <td style="font-weight:700;">${aff.totalSales.toLocaleString()} ر.س</td>
+          <td style="color:var(--gold); font-weight:700;">${comm.toLocaleString()} ر.س (${aff.commissionRate}%)</td>
+          <td class="no-print">
+            <button class="btn-outline" onclick="editAffiliate(${idx})">تعديل</button>
+            <button class="btn-danger" onclick="deleteAffiliate(${idx})">حذف</button>
+          </td>
+        </tr>
+      `;
+    });
+    document.getElementById('affTotalCount').textContent = affiliates.length;
+    document.getElementById('affTotalClicks').textContent = totalClicks;
+    document.getElementById('affTotalSalesTxt').textContent = totalSales.toLocaleString('ae-SA') + " ر.س";
+  }
+  if(document.getElementById('affiliateSearch')) {
+    document.getElementById('affiliateSearch').addEventListener('input', renderAffiliateTable);
+  }
+
+  function printAffiliateReport() {
+    const tbody = document.getElementById('repPrintTableBody');
+    tbody.innerHTML = '';
+    document.getElementById('repMetaDate').innerHTML = `<strong>تاريخ استخراج التقرير:</strong> ${new Date().toLocaleDateString('ar-SA')}م | <strong>النطاق المرجعي:</strong> لوحة التحكم المركزية`;
+    
+    affiliates.forEach(aff => {
+      let comm = (aff.totalSales * (aff.commissionRate / 100));
+      tbody.innerHTML += `
+        <tr>
+          <td style="font-weight:600;">${aff.name} (${aff.slug})</td>
+          <td>${aff.clicks}</td>
+          <td>${aff.salesCount}</td>
+          <td>${aff.totalSales.toLocaleString()} ر.س</td>
+          <td style="font-weight:700; color:var(--gold);">${comm.toLocaleString()} ر.س</td>
+        </tr>
+      `;
+    });
+    document.getElementById('reportPrintView').style.display = 'block';
+    window.scrollTo(0, document.getElementById('reportPrintView').offsetTop);
+  }
+  function closeAffPreview() { document.getElementById('reportPrintView').style.display = 'none'; }
+
+  // ---------------- MODULE 3: QUOTES LOGIC ----------------
+  function renderQuoteItems() {
+    const tbody = document.getElementById('quoteItemsTableBody');
+    tbody.innerHTML = '';
+    quoteItems.forEach((item, idx) => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${idx + 1}</td>
+          <td style="font-weight:600;">${item.desc}</td>
+          <td>${item.price.toLocaleString()} ر.س</td>
+          <td><button class="btn-danger" onclick="deleteQuoteItem(${idx})">حذف</button></td>
+        </tr>
+      `;
+    });
+  }
+  function addQuoteItem() {
+    const desc = document.getElementById('itemDesc').value;
+    const price = parseFloat(document.getElementById('itemPrice').value);
+    if(!desc || isNaN(price)) { alert("الرجاء إدخال وصف الخدمة والقيمة الأساسية بدقة!"); return; }
+    quoteItems.push({ desc, price });
+    document.getElementById('itemDesc').value = '';
+    document.getElementById('itemPrice').value = '';
+    renderQuoteItems();
+  }
+  function deleteQuoteItem(idx) { quoteItems.splice(idx, 1); renderQuoteItems(); }
+  function backToQuoteEditor() {
+    document.getElementById('quotePrintPreviewView').style.display = 'none';
+    document.getElementById('quoteEditorView').style.display = 'block';
+  }
+  function generateQuotePreview() {
+    if(quoteItems.length === 0) { alert("لا يمكن توليد وثيقة عرض فارغة، يرجى إدراج البند والخدمة أولاً."); return; }
+    
+    let subTotal = 0;
+    const lblBody = document.getElementById('lblQuoteItemsBody');
+    lblBody.innerHTML = '';
+    
+    quoteItems.forEach((item, idx) => {
+      subTotal += item.price;
+      lblBody.innerHTML += `
+        <tr>
+          <td>${idx + 1}</td>
+          <td style="font-weight:600; text-align:right;">${item.desc}</td>
+          <td style="text-align:left;">${item.price.toLocaleString()} ر.س</td>
+        </tr>
+      `;
+    });
+
+    let taxAmount = subTotal * 0.15;
+    let grandTotal = subTotal + taxAmount;
+
+    document.getElementById('lblClientName').textContent = document.getElementById('clientName').value;
+    document.getElementById('lblClientInfo').textContent = document.getElementById('clientInfo').value;
+    document.getElementById('lblClientSignatureName').textContent = document.getElementById('clientContact').value;
+    document.getElementById('lblQuoteRef').textContent = document.getElementById('quoteRef').value;
+    document.getElementById('lblQuoteValidity').textContent = document.getElementById('quoteValidity').value;
+    document.getElementById('lblQuoteTerms').textContent = document.getElementById('quoteTerms').value;
+    document.getElementById('lblQuoteDate').textContent = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' }) + "م";
+
+    document.getElementById('lblSubTotal').textContent = subTotal.toLocaleString() + " ر.س";
+    document.getElementById('lblTaxAmount').textContent = taxAmount.toLocaleString() + " ر.س";
+    document.getElementById('lblGrandTotal').textContent = grandTotal.toLocaleString() + " ر.س";
+
+    document.getElementById('quoteEditorView').style.display = 'none';
+    document.getElementById('quotePrintPreviewView').style.display = 'block';
+    window.scrollTo(0, document.getElementById('quotePrintPreviewView').offsetTop);
+  }
+
+  // ---------------- MODULE 4: ACCOUNTING LOGIC ----------------
+  function initAccountingSystem() {
+    renderAccountingTable();
+    renderInvoicesTable();
+  }
+  function switchAccTab(tabNum) {
+    document.querySelectorAll('#accountingSection .tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('#accountingSection .tab-content').forEach(cont => cont.classList.remove('active'));
+    document.getElementById('btnTab' + tabNum).classList.add('active');
+    document.getElementById('accTab' + tabNum).classList.add('active');
+  }
+
+  function addAccTransaction() {
+    const type = document.getElementById('accType').value;
+    const desc = document.getElementById('accDesc').value;
+    const baseAmount = parseFloat(document.getElementById('accAmount').value);
+    const taxRate = parseInt(document.getElementById('accTaxStatus').value);
+
+    if(!desc || isNaN(baseAmount) || baseAmount <= 0) { alert("يرجى تعبئة البيان والمبلغ المالي الصافي بشكل صحيح!"); return; }
+
+    const ref = "INV-" + new Date().getFullYear() + "-" + (transactions.length + 1001);
+    const date = new Date().toLocaleDateString('ar-SA');
+    const client = type === 'إيراد' ? 'جهة / عميل استشاري' : 'مصروفات تشغيلية وعامة';
+
+    const obj = { ref, date, type, desc, baseAmount, taxRate, client };
+    transactions.unshift(obj);
+    localStorage.setItem('four_core_accounting_data', JSON.stringify(transactions));
+    
+    document.getElementById('accDesc').value = '';
+    document.getElementById('accAmount').value = '';
+    
+    initAccountingSystem();
+  }
+
+  function deleteAccTransaction(idx) {
+    if(confirm("هل تريد إلغاء هذا القيد المالي من الدفاتر تماماً؟")) {
+      transactions.splice(idx, 1);
+      localStorage.setItem('four_core_accounting_data', JSON.stringify(transactions));
+      initAccountingSystem();
+    }
+  }
+
+  function renderAccountingTable() {
+    const tbody = document.getElementById('accTableBody');
+    tbody.innerHTML = '';
+    
+    let totalIncome = 0, totalExpense = 0;
+
+    transactions.forEach((t, idx) => {
+      let tax = t.baseAmount * (t.taxRate / 100);
+      let grand = t.baseAmount + tax;
+
+      if(t.type === 'إيراد') totalIncome += t.baseAmount; else totalExpense += t.baseAmount;
+
+      let bCls = t.type === 'إيراد' ? 'badge-in' : 'badge-out';
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${t.date}</td>
+          <td><span class="badge ${bCls}">${t.type}</span></td>
+          <td style="font-weight:600;">${t.desc}</td>
+          <td>${t.baseAmount.toLocaleString()} ر.س</td>
+          <td>${tax.toLocaleString()} ر.س</td>
+          <td style="font-weight:700; color:var(--dark);">${grand.toLocaleString()} ر.س</td>
+          <td class="no-print">
+            <button class="btn-danger" onclick="deleteAccTransaction(${idx})">إلغاء القيد</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('totalIncomeTxt').textContent = totalIncome.toLocaleString() + " ر.س";
+    document.getElementById('totalExpenseTxt').textContent = totalExpense.toLocaleString() + " ر.س";
+    let profit = totalIncome - totalExpense;
+    const pTxt = document.getElementById('netProfitTxt');
+    pTxt.textContent = profit.toLocaleString() + " ر.س";
+    pTxt.style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
+  }
+
+  function renderInvoicesTable() {
+    const tbody = document.getElementById('invoicesTableBody');
+    tbody.innerHTML = '';
+    
+    transactions.forEach((t, idx) => {
+      if(t.type !== 'إيراد') return;
+      let tax = t.baseAmount * (t.taxRate / 100);
+      let grand = t.baseAmount + tax;
+
+      tbody.innerHTML += `
+        <tr>
+          <td style="font-family:monospace; font-weight:bold;">${t.ref}</td>
+          <td>${t.date}</td>
+          <td><input type="text" value="${t.client}" style="border:none; background:transparent; font-family:'Lemonada'; font-size:11px;" onchange="updateInvClient(${idx}, this.value)"></td>
+          <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">${t.desc}</td>
+          <td style="font-weight:700; color:var(--gold);">${grand.toLocaleString()} ر.س</td>
+          <td><button class="btn-gold" style="padding:4px 12px; font-size:10.5px;" onclick="previewAndPrintInvoice(${idx})">معاينة وطباعة الفاتورة</button></td>
+        </tr>
+      `;
+    });
+  }
+
+  function updateInvClient(idx, val) {
+    transactions[idx].client = val;
+    localStorage.setItem('four_core_accounting_data', JSON.stringify(transactions));
+  }
+
+  function previewAndPrintInvoice(idx) {
+    const inv = transactions[idx];
+    const tax = inv.baseAmount * (inv.taxRate / 100);
+    const grand = inv.baseAmount + tax;
+
+    document.getElementById('pInvRef').textContent = inv.ref;
+    document.getElementById('pInvDate').textContent = inv.date;
+    document.getElementById('pInvClient').textContent = inv.client;
+    document.getElementById('pInvDesc').textContent = inv.desc;
+    document.getElementById('pInvBasePrice').textContent = inv.baseAmount.toLocaleString() + " ر.س";
+    
+    document.getElementById('pSummarySub').textContent = inv.baseAmount.toLocaleString() + " ر.س";
+    document.getElementById('pSummaryTaxRate').textContent = inv.taxRate;
+    document.getElementById('pSummaryTaxAmount').textContent = tax.toLocaleString() + " ر.س";
+    document.getElementById('pSummaryGrand').textContent = grand.toLocaleString() + " ر.س";
+
+    document.getElementById('accountingDashboardView').style.display = 'none';
+    document.getElementById('invoicePrintView').style.display = 'block';
+    window.scrollTo(0, document.getElementById('invoicePrintView').offsetTop);
+  }
+
+  function closeInvoicePrint() {
+    document.getElementById('invoicePrintView').style.display = 'none';
+    document.getElementById('accountingDashboardView').style.display = 'block';
+  }
+
+  // ---------------- MODULE 5: NEW ADVANCED KPIS ENGINE ----------------
+  function calculateAdvancedKPIs() {
+    let totalIncome = 0;
+    let totalExpense = 0;
+    transactions.forEach(t => {
+      if(t.type === 'إيراد') totalIncome += t.baseAmount;
+      else if(t.type === 'مصروف') totalExpense += t.baseAmount;
+    });
+    let netProfit = totalIncome - totalExpense;
+
+    let ros = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
+    document.getElementById('kpiRos').textContent = ros.toFixed(1) + "%";
+    
+    let expRatio = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
+    document.getElementById('kpiExpenseRatio').textContent = expRatio.toFixed(1) + "%";
+
+    let wonCount = 0;
+    let lostCount = 0;
+    let totalCrm = customers.length;
+
+    customers.forEach(c => {
+      if(c.status === 'مغلق ناجح') wonCount++;
+      if(c.status === 'مغلق مستبعد') lostCount++;
+    });
+
+    let acv = wonCount > 0 ? totalIncome / wonCount : 0;
+    document.getElementById('kpiAcv').textContent = Math.round(acv).toLocaleString() + " ر.س";
+
+    let wonPct = totalCrm > 0 ? (wonCount / totalCrm) * 100 : 0;
+    let lostPct = totalCrm > 0 ? (lostCount / totalCrm) * 100 : 0;
+
+    document.getElementById('lblCrmWonPercent').textContent = wonPct.toFixed(1) + "%";
+    document.getElementById('fillCrmWonPercent').style.width = wonPct + "%";
+    document.getElementById('lblCrmLostPercent').textContent = lostPct.toFixed(1) + "%";
+    document.getElementById('fillCrmLostPercent').style.width = lostPct + "%";
+
+    let totalClicks = 0;
+    let totalAffSales = 0;
+    affiliates.forEach(aff => {
+      totalClicks += aff.clicks;
+      totalAffSales += aff.totalSales;
+    });
+
+    let ape = totalClicks > 0 ? totalAffSales / totalClicks : 0;
+    document.getElementById('kpiApe').textContent = ape.toFixed(2) + " ر.س";
+
+    const finChart = document.getElementById('financialComparisonChart');
+    finChart.innerHTML = '';
+    
+    let maxVal = Math.max(totalIncome, totalExpense, Math.abs(netProfit), 1000);
+    let items = [
+      { label: 'إجمالي الإيرادات', val: totalIncome, color: 'var(--success)' },
+      { label: 'المصروفات العامة', val: totalExpense, color: 'var(--danger)' },
+      { label: 'صافي أرباح النواة', val: netProfit, color: 'var(--info)' }
+    ];
+
+    items.forEach(item => {
+      let pct = (Math.max(item.val, 0) / maxVal) * 100;
+      finChart.innerHTML += `
+        <div class="bar-row">
+          <div class="bar-lbl" style="font-weight:600;">${item.label}</div>
+          <div class="bar-track"><div class="bar-fill" style="width: ${pct}%; background:${item.color};"></div></div>
+          <div class="bar-lbl" style="text-align:left; font-weight:bold; color:${item.color};">${Math.round(item.val).toLocaleString()}</div>
+        </div>
+      `;
+    });
+  }
+
+  window.onload = function() {
+    initCRM();
+  };
+</script>
+</body>
+</html>
