@@ -644,7 +644,7 @@ function submitLead(){
   if(!name){document.getElementById('leadName').style.borderColor='#C0392B';document.getElementById('leadName').focus();return;}
   if(phone.length<9){document.getElementById('leadPhone').style.borderColor='#C0392B';document.getElementById('leadPhone').focus();return;}
   var waPhone=phone.startsWith('0')?'966'+phone.slice(1):phone;
-  var url="https://script.google.com/macros/s/AKfycbyJtRIa6PBEXR9xb4EU6ZxHIavWvJ5y0jsIYXHcUCqESGnUJo-Tx5XSZ6ZVk-NxGlay/exec";
+  var url="https://script.google.com/macros/s/AKfycbwHnciVQrhJP1fMoGoUbTmxBz3Zp137RtWx6kOMsn4v-tqE5zw4LWnLV8PaObnBPcT_/exec";
   var formData=new FormData();
   formData.append("name",name);
   formData.append("phone",waPhone);
