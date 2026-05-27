@@ -610,9 +610,10 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   <button id="btnScrollUp" class="btn-scrollup btn-float" title="الرجوع للأعلى">▲</button>
 </div>
 
-<footer>© 2026 المستشار عبدالاله بدوي · جميع الحقوق محفوظة · الرياض، المملكة العربية السعودية</footer>
+<footer>© <span id="footerYear"></span> المستشار عبدالاله بدوي · جميع الحقوق محفوظة · الرياض، المملكة العربية السعودية</footer>
 
 <script>
+document.getElementById('footerYear').textContent = new Date().getFullYear();
 /* ===== Image Proof Modal ===== */
 var imgMap={
   roi:{src:'https://budaiwim.com/assets/img/hmlt-alʿayd-ʿly-alastthmar-snab-shat.webp'},
