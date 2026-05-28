@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة مؤشرات الأداء التفاعلية لـ CRM</title>
+    <!-- خط Tajawal الأنيق -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS للمظهر الاحترافي -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- مكتبة الأيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- مكتبة الرسوم البيانية Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            navy: '#1e293b',
+                            blue: '#0066CC',
+                            green: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e',
+                            purple: '#8b5cf6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+        /* تخصيص مظهر شريط التمرير */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0066CC;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col animate-fade-in">
+
+    <!-- شريط التنقل العلوي -->
+    <header class="bg-brand-navy border-b border-slate-800 px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-blue/10 p-2.5 rounded-xl border border-brand-blue/30 text-brand-blue">
+                    <i class="fa-solid fa-chart-line text-2xl animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-wide text-white">نظام تحصين الأعمال الذكي</h1>
+                    <p class="text-xs text-slate-400">لوحة تحليل البيانات المباشرة للـ CRM والتسويق</p>
+                </div>
+            </div>
+
+            <!-- محدد النطاق الزمني والتصفية -->
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm text-slate-400 ml-2"><i class="fa-solid fa-calendar-days text-brand-blue ml-1"></i> النطاق الزمني:</span>
+                <div class="inline-flex rounded-lg border border-slate-700 p-0.5 bg-slate-900/80">
+                    <button onclick="changePeriod('annual')" id="btn-annual" class="period-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all duration-200 bg-brand-blue text-white">سنوي</button>
+                    <button onclick="changePeriod('h1')" id="btn-h1" class="period-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-slate-400 hover:text-white">النصف الأول</button>
+                    <button onclick="changePeriod('h2')" id="btn-h2" class="period-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-slate-400 hover:text-white">النصف الثاني</button>
+                    <button onclick="changePeriod('q1')" id="btn-q1" class="period-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-slate-400 hover:text-white">الربع الأول (Q1)</button>
+                    <button onclick="changePeriod('q2')" id="btn-q2" class="period-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-slate-400 hover:text-white">الربع الثاني (Q2)</button>
+                    <button onclick="changePeriod('q3')" id="btn-q3" class="period-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-slate-400 hover:text-white">الربع الثالث (Q3)</button>
+                    <button onclick="changePeriod('q4')" id="btn-q4" class="period-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-slate-400 hover:text-white">الربع الرابع (Q4)</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- بوابة ربط قوقل شيت المباشر -->
+    <section class="max-w-7xl w-full mx-auto px-6 mt-6">
+        <div class="bg-gradient-to-r from-emerald-950/30 to-brand-navy p-5 rounded-2xl border border-emerald-500/30 shadow-xl">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/30 text-emerald-400">
+                        <i class="fa-solid fa-file-excel text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-md font-bold text-white flex items-center gap-2">
+                            ربط قوقل شيت المباشر (Real-time Google Sheet Sync)
+                            <span id="sync-badge" class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">غير متصل - يعرض بيانات افتراضية</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">اربط لوحة البيانات بجدول بيانات قوقل مباشرة لتحديث تلقائي ولحظي بدون تحديث الصفحة.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                    <input type="text" id="sheet-id-input" placeholder="معرّف الـ Spreadsheet ID المنسوخ" class="flex-grow lg:w-72 bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-emerald-500 text-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none transition-all">
+                    <input type="text" id="sheet-name-input" placeholder="اسم الصفحة (مثال: Leads)" class="w-36 bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-emerald-500 text-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none transition-all">
+                    <button onclick="connectGoogleSheet()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/20">
+                        <i class="fa-solid fa-rotate"></i> جلب ومزامنة
+                    </button>
+                    <button onclick="toggleAutoSync()" id="auto-sync-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3 py-2 rounded-xl text-xs transition-all flex items-center gap-1">
+                        <i class="fa-solid fa-clock"></i> مزامنة تلقائية (إيقاف)
+                    </button>
+                </div>
+            </div>
+            <!-- تعليمات الربط -->
+            <div class="mt-3 pt-3 border-t border-slate-800/60 text-[11px] text-slate-400 flex flex-wrap gap-x-6 gap-y-2">
+                <span><strong class="text-emerald-400">طريقة الربط:</strong> 1. في ملف قوقل شيت اضغط مشاركة <i class="fa-solid fa-share-nodes text-emerald-400 ml-0.5"></i> ثم اجعل صلاحية الوصول "أي شخص لديه الرابط قارئ".</span>
+                <span>2. انسخ الكود الطويل الموجود في رابط الملف بين (d/ و /edit) والصقه في خانة المعرّف.</span>
+                <span class="text-brand-amber"><i class="fa-solid fa-circle-info"></i> نوصي بأن تحتوي أعمدة الشيت على كلمات مثل: (تاريخ، حالة العميل، نوع الخدمة، قناة الجذب، تقييم).</span>
+            </div>
+        </div>
+    </section>
+
+    <main class="flex-grow p-6 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- القسم الأول: بطاقات مؤشرات الأداء الحقيقية (KPI Cards) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- إجمالي العملاء -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 text-slate-800 text-7xl opacity-30 transition-all duration-300 group-hover:scale-110">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-400">إجمالي الفرص والعملاء</p>
+                <h3 id="kpi-total" class="text-3xl font-black text-white mt-2">--</h3>
+                <div class="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                    <span class="text-brand-blue"><i class="fa-solid fa-arrows-spin"></i></span>
+                    <span>تحديث مستمر من قوقل شيت</span>
+                </div>
+            </div>
+
+            <!-- معدل التحويل الإجمالي -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 text-slate-800 text-7xl opacity-30 transition-all duration-300 group-hover:scale-110">
+                    <i class="fa-solid fa-filter"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-400">معدل التحويل الإجمالي</p>
+                <h3 id="kpi-conversion" class="text-3xl font-black text-white mt-2">--%</h3>
+                <div class="text-xs text-brand-blue mt-2 flex items-center gap-1 font-bold">
+                    <span>(مغلق ناجح / الإجمالي)</span>
+                </div>
+            </div>
+
+            <!-- معدل إغلاق المبيعات الفعلي -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 text-slate-800 text-7xl opacity-30 transition-all duration-300 group-hover:scale-110">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-400">معدل الإغلاق (Win Rate)</p>
+                <h3 id="kpi-winrate" class="text-3xl font-black text-brand-green mt-2">--%</h3>
+                <div class="text-xs text-brand-green mt-2 flex items-center gap-1 font-bold">
+                    <span>كفاءة حسم الصفقات</span>
+                </div>
+            </div>
+
+            <!-- رضا العملاء الموزون الشامل -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 text-slate-800 text-7xl opacity-30 transition-all duration-300 group-hover:scale-110">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-400">مؤشر الرضا الموزون CSAT</p>
+                <h3 id="kpi-csat" class="text-3xl font-black text-brand-amber mt-2">--%</h3>
+                <div class="text-xs text-brand-amber mt-2 flex items-center gap-1 font-bold">
+                    <span id="csat-meta">حسب الردود الفعلية</span>
+                </div>
+            </div>
+
+            <!-- قيمة التدفق النشط في النظام -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 text-slate-800 text-7xl opacity-30 transition-all duration-300 group-hover:scale-110">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-400">التدفق النشط المتبقي</p>
+                <h3 id="kpi-active" class="text-3xl font-black text-brand-purple mt-2">--</h3>
+                <div class="text-xs text-brand-purple mt-2 flex items-center gap-1 font-bold">
+                    <span id="active-percentage">--% من إجمالي المحفظة</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- القسم الثاني: الرسوم البيانية التفاعلية -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- مسار مبيعات ومراحل التدفق (S_KPIs) -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-md font-bold text-white mb-1"><i class="fa-solid fa-chart-pie text-brand-blue ml-1"></i> توزيع مراحل التدفق (S_KPIs)</h3>
+                    <p class="text-xs text-slate-400 mb-4">حالة وحركية مبيعات ليدز المقسمة داخل النظام</p>
+                </div>
+                <div class="h-64 flex justify-center items-center relative">
+                    <canvas id="pipelineChart"></canvas>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-4 text-xs text-slate-400">
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-500 inline-block"></span>جديد</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-500 inline-block"></span>قيد المتابعة</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span>مغلق ناجح</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500 inline-block"></span>مغلق مستبعد</div>
+                </div>
+            </div>
+
+            <!-- فاعلية وقوة قنوات الاستقطاب التسويقي -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-md font-bold text-white mb-1"><i class="fa-solid fa-bullhorn text-brand-purple ml-1"></i> قنوات الجذب والتسويق</h3>
+                    <p class="text-xs text-slate-400 mb-4">القنوات الأكثر فاعلية استناداً لأكواد ألوان الهويات البصرية المعتمدة</p>
+                </div>
+                <div class="h-64 flex justify-center items-center">
+                    <canvas id="acquisitionChart"></canvas>
+                </div>
+                <div class="text-center text-xs text-slate-400 mt-4">
+                    <span class="text-brand-purple"><i class="fa-solid fa-lightbulb"></i></span> "صفحة الهبوط" تمثل ركيزة الاستقطاب الأساسية.
+                </div>
+            </div>
+
+            <!-- توزيع الطلب حسب الخدمات المطلوبة -->
+            <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-md font-bold text-white mb-1"><i class="fa-solid fa-briefcase text-brand-amber ml-1"></i> طلب الاستشارات والخدمات (KPIs)</h3>
+                    <p class="text-xs text-slate-400 mb-4">حجم الطلب على خدمات تحصين الأعمال الشاملة</p>
+                </div>
+                <div class="h-64 flex justify-center items-center">
+                    <canvas id="servicesChart"></canvas>
+                </div>
+                <div class="text-center text-xs text-slate-400 mt-4">
+                    مقارنة حجم الخدمات والطلب الاستشاري والقانوني.
+                </div>
+            </div>
+        </div>
+
+        <!-- القسم الثالث: لوحة التحكم المباشر بالبيانات (محاكاة البيفوت تيبل من الشيت) -->
+        <div class="bg-brand-navy rounded-2xl border border-slate-800 overflow-hidden">
+            <div class="p-5 border-b border-slate-800 bg-slate-900/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h3 class="text-md font-bold text-white"><i class="fa-solid fa-table-cells text-brand-green ml-1"></i> لوحة مدخلات البيفوت تيبل (Pivot Table Sandbox)</h3>
+                    <p class="text-xs text-slate-400">قم بتغيير أي قيمة مأخوذة من الشيت وسوف تتحدث الرسوم والمؤشرات المتبقية تلقائياً بالكامل في نفس اللحظة!</p>
+                </div>
+                <div class="bg-slate-800 text-brand-blue font-bold px-3 py-1.5 rounded-lg border border-slate-700 text-xs flex items-center gap-1.5">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    مزامنة تفاعلية نشطة
+                </div>
+            </div>
+
+            <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- جدول مدخلات حالات العملاء S_KPIs -->
+                <div class="space-y-4">
+                    <h4 class="text-sm font-bold text-white border-b border-slate-800 pb-2"><i class="fa-solid fa-circle-nodes text-brand-blue ml-1.5"></i> مدخلات حالات الـ Pipeline (S_KPIs)</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">جديد</label>
+                            <input type="number" id="input-new" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-white font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">قيد المتابعة</label>
+                            <input type="number" id="input-followup" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-white font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">مغلق ناجح</label>
+                            <input type="number" id="input-won" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-green font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">مغلق مستبعد</label>
+                            <input type="number" id="input-lost" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-rose font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جدول مدخلات نوع الخدمة KPIs -->
+                <div class="space-y-4">
+                    <h4 class="text-sm font-bold text-white border-b border-slate-800 pb-2"><i class="fa-solid fa-toolbox text-brand-amber ml-1.5"></i> طلب الخدمات والاستشارات (KPIs)</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs text-slate-400 truncate max-w-[200px]">تسويق رقمي وحملات إعلانية</span>
+                            <input type="number" id="input-marketing" oninput="updatePivotData()" class="w-20 bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-2 py-1.5 text-xs text-white text-center font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs text-slate-400 truncate max-w-[200px]">تشخيص وحوكمة مالية وإدارية</span>
+                            <input type="number" id="input-governance" oninput="updatePivotData()" class="w-20 bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-2 py-1.5 text-xs text-white text-center font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs text-slate-400 truncate">مظلة استشارية متكاملة</span>
+                            <input type="number" id="input-consulting" oninput="updatePivotData()" class="w-20 bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-2 py-1.5 text-xs text-white text-center font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs text-slate-400 truncate">استشارة قانونية وعقود</span>
+                            <input type="number" id="input-legal" oninput="updatePivotData()" class="w-20 bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-2 py-1.5 text-xs text-white text-center font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- مدخلات الرضا CSAT وقنوات الجذب -->
+                <div class="space-y-4">
+                    <h4 class="text-sm font-bold text-white border-b border-slate-800 pb-2"><i class="fa-solid fa-face-smile text-brand-green ml-1.5"></i> مدخلات مؤشر الرضا (CSAT) والتقييمات</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">العملاء المقيمين فعلياً</label>
+                            <input type="number" id="input-responders" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-white font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">متوسط التقييم (من 5)</label>
+                            <input type="number" step="0.1" min="0" max="5" id="input-rating" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-amber font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-950/40 rounded-xl border border-slate-800/80 text-[11px] text-slate-400">
+                        <i class="fa-solid fa-circle-info text-brand-blue ml-1"></i> يتم وزن وحساب رضا العملاء بناءً على نسبة الذين شاركوا في التقييم الفعلي لحمايتك من التقييمات العشوائية المضللة.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- تذييل الصفحة -->
+    <footer class="bg-brand-navy border-t border-slate-800 px-6 py-4 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
+            <p>© 2026 نظام CRM الذكي المدمج لتحصين الأعمال. جميع الحقوق محفوظة.</p>
+            <p class="flex items-center gap-1.5">
+                <span>مصمم ومبني بلغة HTML/JS تفاعلية</span>
+                <span class="text-slate-700">|</span>
+                <span class="text-brand-blue"><i class="fa-solid fa-code"></i></span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- منطق جافا سكريبت لتغذية لوحة البيانات وتفعيلها مع قوقل شيت -->
+    <script>
+        // قوالب تصنيف الهوية البصرية وشبكة القنوات لسهولة فرز الشيت
+        const channelMap = {
+            'صفحة الهبوط': 'landingPage', 'landing': 'landingPage',
+            'إكس': 'x', 'تويتر': 'x', 'twitter': 'x', 'x': 'x',
+            'يوتيوب': 'youtube', 'youtube': 'youtube',
+            'واتساب': 'whatsapp', 'whatsapp': 'whatsapp',
+            'لينكد إن': 'linkedin', 'linkedin': 'linkedin',
+            'فيسبوك': 'facebook', 'facebook': 'facebook',
+            'إنستغرام': 'instagram', 'instagram': 'instagram',
+            'بينتريست': 'pinterest', 'pinterest': 'pinterest',
+            'تليجرام': 'telegram', 'telegram': 'telegram',
+            'تيك توك': 'tiktok', 'tiktok': 'tiktok',
+            'حراج': 'haraj', 'haraj': 'haraj',
+            'سناب شات': 'snapchat', 'snapchat': 'snapchat'
+        };
+
+        const serviceMap = {
+            'تسويق': 'marketing', 'حملات': 'marketing',
+            'حوكمة': 'governance', 'تشخيص': 'governance',
+            'مظلة': 'consulting', 'استشارية': 'consulting',
+            'قانون': 'legal', 'عقود': 'legal'
+        };
+
+        const statusMap = {
+            'جديد': 'newLeads',
+            'متابعة': 'followUp', 'قيد المتابعة': 'followUp',
+            'ناجح': 'won', 'مغلق ناجح': 'won',
+            'مستبعد': 'lost', 'مغلق مستبعد': 'lost'
+        };
+
+        function createEmptyPeriod() {
+            return {
+                newLeads: 0,
+                followUp: 0,
+                won: 0,
+                lost: 0,
+                marketing: 0,
+                governance: 0,
+                consulting: 0,
+                legal: 0,
+                csatResponders: 0,
+                csatRating: 0.0,
+                totalRatingSum: 0.0,
+                acquisition: {
+                    landingPage: 0, x: 0, youtube: 0, whatsapp: 0, linkedin: 0,
+                    facebook: 0, instagram: 0, pinterest: 0, telegram: 0,
+                    tiktok: 0, haraj: 0, snapchat: 0
+                }
+            };
+        }
+
+        // قاعدة البيانات الافتراضية كخيار احتياطي (Fallback) في حال عدم الربط
+        const periodDatabase = {
+            annual: {
+                newLeads: 11, followUp: 4, won: 5, lost: 1,
+                marketing: 8, governance: 2, consulting: 1, legal: 1,
+                csatResponders: 3, csatRating: 4.7,
+                acquisition: {
+                    landingPage: 8, x: 3, youtube: 1, whatsapp: 1, linkedin: 1,
+                    facebook: 1, instagram: 1, pinterest: 1, telegram: 1,
+                    tiktok: 1, haraj: 1, snapchat: 1
+                }
+            },
+            h1: {
+                newLeads: 6, followUp: 2, won: 3, lost: 0,
+                marketing: 5, governance: 1, consulting: 1, legal: 1,
+                csatResponders: 2, csatRating: 4.8,
+                acquisition: {
+                    landingPage: 4, x: 2, youtube: 1, whatsapp: 0, linkedin: 1,
+                    facebook: 0, instagram: 1, pinterest: 0, telegram: 0,
+                    tiktok: 1, haraj: 1, snapchat: 0
+                }
+            },
+            h2: {
+                newLeads: 5, followUp: 2, won: 2, lost: 1,
+                marketing: 3, governance: 1, consulting: 0, legal: 0,
+                csatResponders: 1, csatRating: 4.5,
+                acquisition: {
+                    landingPage: 4, x: 1, youtube: 0, whatsapp: 1, linkedin: 0,
+                    facebook: 1, instagram: 0, pinterest: 1, telegram: 1,
+                    tiktok: 0, haraj: 0, snapchat: 1
+                }
+            },
+            q1: {
+                newLeads: 3, followUp: 1, won: 2, lost: 0,
+                marketing: 3, governance: 0, consulting: 1, legal: 0,
+                csatResponders: 1, csatRating: 5.0,
+                acquisition: {
+                    landingPage: 2, x: 1, youtube: 0, whatsapp: 0, linkedin: 1,
+                    facebook: 0, instagram: 1, pinterest: 0, telegram: 0,
+                    tiktok: 0, haraj: 1, snapchat: 0
+                }
+            },
+            q2: {
+                newLeads: 3, followUp: 1, won: 1, lost: 0,
+                marketing: 2, governance: 1, consulting: 0, legal: 1,
+                csatResponders: 1, csatRating: 4.6,
+                acquisition: {
+                    landingPage: 2, x: 1, youtube: 1, whatsapp: 0, linkedin: 0,
+                    facebook: 0, instagram: 0, pinterest: 0, telegram: 0,
+                    tiktok: 1, haraj: 0, snapchat: 0
+                }
+            },
+            q3: {
+                newLeads: 2, followUp: 1, won: 1, lost: 1,
+                marketing: 2, governance: 1, consulting: 0, legal: 0,
+                csatResponders: 1, csatRating: 4.5,
+                acquisition: {
+                    landingPage: 2, x: 0, youtube: 0, whatsapp: 1, linkedin: 0,
+                    facebook: 1, instagram: 0, pinterest: 1, telegram: 0,
+                    tiktok: 0, haraj: 0, snapchat: 1
+                }
+            },
+            q4: {
+                newLeads: 3, followUp: 1, won: 1, lost: 0,
+                marketing: 1, governance: 0, consulting: 0, legal: 0,
+                csatResponders: 0, csatRating: 0.0,
+                acquisition: {
+                    landingPage: 2, x: 1, youtube: 0, whatsapp: 0, linkedin: 0,
+                    facebook: 0, instagram: 0, pinterest: 0, telegram: 1,
+                    tiktok: 0, haraj: 0, snapchat: 0
+                }
+            }
+        };
+
+        let currentPeriod = 'annual';
+        let activeData = { ...periodDatabase.annual };
+        let pipelineChart, acquisitionChart, servicesChart;
+        let autoSyncInterval = null;
+        let autoSyncEnabled = false;
+
+        // عند تحميل الصفحة، نحاول استرجاع الإعدادات المحفوظة للربط المباشر
+        window.onload = function() {
+            const savedSheetId = localStorage.getItem('crm_sheet_id');
+            const savedSheetName = localStorage.getItem('crm_sheet_name');
+            if (savedSheetId) {
+                document.getElementById('sheet-id-input').value = savedSheetId;
+                document.getElementById('sheet-name-input').value = savedSheetName || 'Leads';
+                connectGoogleSheet(); // الاتصال تلقائياً
+            } else {
+                loadPeriodInputs();
+                initCharts();
+                calculateAllKPIs();
+            }
+        };
+
+        // الربط وجلب البيانات المباشر باستخدام Google Sheets Visualization API
+        function connectGoogleSheet() {
+            let rawSheetInput = document.getElementById('sheet-id-input').value.trim();
+            const sheetName = document.getElementById('sheet-name-input').value.trim() || 'Leads';
+
+            if (!rawSheetInput) {
+                showSyncStatus('يرجى إدخال معرّف الـ Spreadsheet ID أو الرابط بالكامل', 'error');
+                return;
+            }
+
+            // استخراج معرف الشيت تلقائياً في حال لصق الرابط كاملاً
+            let sheetId = rawSheetInput;
+            const urlMatch = rawSheetInput.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (urlMatch) {
+                sheetId = urlMatch[1];
+                // تحديث الحقل في الواجهة ليعرض المعرف النظيف لراحة المستخدم
+                document.getElementById('sheet-id-input').value = sheetId;
+            }
+
+            showSyncStatus('جاري الاتصال والطلب الفوري...', 'connecting');
+
+            // حفظ البيانات في المتصفح لتجربة مستخدم متميزة
+            localStorage.setItem('crm_sheet_id', sheetId);
+            localStorage.setItem('crm_sheet_name', sheetName);
+
+            // استعلام قوقل شيت جيفز للحصول على استجابة JSON مهيكلة ونظيفة
+            const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+
+            fetch(gvizUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('فشل الاستجابة من قوقل (تأكد من مشاركة الرابط للجميع)');
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    // فك مغلف استجابة Google JSON (يأتي مبدوءاً بـ google.visualization.Query.setResponse)
+                    const startIdx = text.indexOf('{');
+                    const endIdx = text.lastIndexOf('}');
+                    if (startIdx === -1 || endIdx === -1) {
+                        throw new Error('فشل فك شفرة استجابة البيانات. تأكد من إعداد مشاركة الشيت.');
+                    }
+                    const jsonStr = text.substring(startIdx, endIdx + 1);
+                    const data = JSON.parse(jsonStr);
+
+                    processSheetData(data);
+                    showSyncStatus('مزامنة حية نشطة ومحدثة!', 'success');
+                })
+                .catch(err => {
+                    console.error('Connection Error:', err);
+                    showSyncStatus('فشل الاتصال: تأكد من مشاركة الشيت كـ "عارض للجميع" ومطابقة اسم الورقة', 'error');
+                });
+        }
+
+        // معالجة البيانات الخام وترجمتها إلى المؤشرات الحية المعتمدة
+        function processSheetData(data) {
+            if (!data.table || !data.table.rows || !data.table.cols) return;
+
+            const cols = data.table.cols;
+            const rows = data.table.rows;
+
+            // كشف أوتوماتيكي ذكي للأعمدة بناءً على العناوين
+            let periodIdx = -1, statusIdx = -1, serviceIdx = -1, channelIdx = -1, ratingIdx = -1;
+
+            cols.forEach((col, idx) => {
+                const label = (col.label || '').toLowerCase();
+                if (label.includes('تاريخ') || label.includes('ربع') || label.includes('period') || label.includes('date')) {
+                    periodIdx = idx;
+                } else if (label.includes('حالة') || label.includes('status') || label.includes('s_kpi')) {
+                    statusIdx = idx;
+                } else if (label.includes('خدمة') || label.includes('service') || label.includes('kpi')) {
+                    serviceIdx = idx;
+                } else if (label.includes('قناة') || label.includes('channel') || label.includes('acquisition')) {
+                    channelIdx = idx;
+                } else if (label.includes('تقييم') || label.includes('rating')) {
+                    ratingIdx = idx;
+                }
+            });
+
+            // تعيين قيم افتراضية في حال تعثر الكشف الآلي
+            if (periodIdx === -1) periodIdx = 0;
+            if (statusIdx === -1) statusIdx = 1;
+            if (serviceIdx === -1) serviceIdx = 2;
+            if (channelIdx === -1) channelIdx = 3;
+            if (ratingIdx === -1) ratingIdx = 4;
+
+            // بناء جدول الفترات الزمنية المحدثة بالكامل
+            const newDatabase = {
+                annual: createEmptyPeriod(),
+                h1: createEmptyPeriod(),
+                h2: createEmptyPeriod(),
+                q1: createEmptyPeriod(),
+                q2: createEmptyPeriod(),
+                q3: createEmptyPeriod(),
+                q4: createEmptyPeriod()
+            };
+
+            rows.forEach(row => {
+                if (!row.c) return;
+
+                // استخراج القيم الفردية لكل عميل
+                const periodVal = row.c[periodIdx] ? String(row.c[periodIdx].v || '').trim() : '';
+                const statusVal = row.c[statusIdx] ? String(row.c[statusIdx].v || '').trim() : '';
+                const serviceVal = row.c[serviceIdx] ? String(row.c[serviceIdx].v || '').trim() : '';
+                const channelVal = row.c[channelIdx] ? String(row.c[channelIdx].v || '').trim() : '';
+                const ratingVal = row.c[ratingIdx] ? parseFloat(row.c[ratingIdx].v) : NaN;
+
+                // تحديد الفترات المستهدفة (تاريخية، ربع سنوية، سنوية)
+                const targetPeriods = ['annual']; // السنوي يضم كافة السجلات دائماً
+                const pLower = periodVal.toLowerCase();
+
+                if (pLower.includes('q1') || pLower.includes('الربع الأول') || pLower.includes('الأول')) {
+                    targetPeriods.push('q1', 'h1');
+                } else if (pLower.includes('q2') || pLower.includes('الربع الثاني') || pLower.includes('الثاني')) {
+                    targetPeriods.push('q2', 'h1');
+                } else if (pLower.includes('q3') || pLower.includes('الربع الثالث') || pLower.includes('الثالث')) {
+                    targetPeriods.push('q3', 'h2');
+                } else if (pLower.includes('q4') || pLower.includes('الربع الرابع') || pLower.includes('الرابع')) {
+                    targetPeriods.push('q4', 'h2');
+                } else if (pLower.includes('h1') || pLower.includes('النصف الأول')) {
+                    targetPeriods.push('h1');
+                } else if (pLower.includes('h2') || pLower.includes('النصف الثاني')) {
+                    targetPeriods.push('h2');
+                }
+
+                targetPeriods.forEach(p => {
+                    const db = newDatabase[p];
+
+                    // 1. فرز الحالة S_KPIs
+                    let statusKey = null;
+                    for (let key in statusMap) {
+                        if (statusVal.includes(key)) {
+                            statusKey = statusMap[key];
+                            break;
+                        }
+                    }
+                    if (statusKey) {
+                        db[statusKey]++;
+                    }
+
+                    // 2. فرز نوع الخدمة KPIs
+                    let serviceKey = null;
+                    for (let key in serviceMap) {
+                        if (serviceVal.includes(key)) {
+                            serviceKey = serviceMap[key];
+                            break;
+                        }
+                    }
+                    if (serviceKey) {
+                        db[serviceKey]++;
+                    }
+
+                    // 3. فرز قنوات الجذب والتسويق
+                    let channelKey = null;
+                    for (let key in channelMap) {
+                        if (channelVal.toLowerCase().includes(key)) {
+                            channelKey = channelMap[key];
+                            break;
+                        }
+                    }
+                    if (channelKey) {
+                        db.acquisition[channelKey]++;
+                    }
+
+                    // 4. دمج التقييمات وحساب CSAT
+                    if (!isNaN(ratingVal) && ratingVal >= 0 && ratingVal <= 5) {
+                        db.csatResponders++;
+                        db.totalRatingSum += ratingVal;
+                        db.csatRating = parseFloat((db.totalRatingSum / db.csatResponders).toFixed(1));
+                    }
+                });
+            });
+
+            // تحديث قاعدة البيانات العامة بالبيانات المسحوبة من قوقل
+            Object.keys(newDatabase).forEach(p => {
+                periodDatabase[p] = newDatabase[p];
+            });
+
+            // تطبيق التغييرات فوراً على الواجهة والرسوم البيانية
+            changePeriod(currentPeriod);
+        }
+
+        // إظهار حالة الربط بشكل مرئي ممتاز
+        function showSyncStatus(msg, type) {
+            const badge = document.getElementById('sync-badge');
+            badge.innerText = msg;
+            if (type === 'success') {
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse font-bold";
+            } else if (type === 'connecting') {
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse font-bold";
+            } else if (type === 'error') {
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold";
+            } else {
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700";
+            }
+        }
+
+        // تشغيل وإيقاف المزامنة التلقائية اللحظية
+        function toggleAutoSync() {
+            const btn = document.getElementById('auto-sync-btn');
+            if (autoSyncEnabled) {
+                clearInterval(autoSyncInterval);
+                autoSyncEnabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-clock"></i> مزامنة تلقائية (إيقاف)';
+                btn.className = "bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3 py-2 rounded-xl text-xs transition-all flex items-center gap-1";
+            } else {
+                autoSyncEnabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-clock-rotate-left animate-spin text-emerald-400"></i> مزامنة كل (30 ث)';
+                btn.className = "bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 font-bold px-3 py-2 rounded-xl text-xs transition-all flex items-center gap-1";
+                // المزامنة كل 30 ثانية
+                autoSyncInterval = setInterval(connectGoogleSheet, 30000);
+            }
+        }
+
+        // تحميل الداتا إلى حقول التعديل المباشر كقاعدة Sandbox
+        function loadPeriodInputs() {
+            document.getElementById('input-new').value = activeData.newLeads;
+            document.getElementById('input-followup').value = activeData.followUp;
+            document.getElementById('input-won').value = activeData.won;
+            document.getElementById('input-lost').value = activeData.lost;
+
+            document.getElementById('input-marketing').value = activeData.marketing;
+            document.getElementById('input-governance').value = activeData.governance;
+            document.getElementById('input-consulting').value = activeData.consulting;
+            document.getElementById('input-legal').value = activeData.legal;
+
+            document.getElementById('input-responders').value = activeData.csatResponders;
+            document.getElementById('input-rating').value = activeData.csatRating;
+        }
+
+        // تغيير الفترات الزمنية
+        function changePeriod(period) {
+            currentPeriod = period;
+            activeData = { ...periodDatabase[period] };
+            
+            // تحديث الأزرار في الواجهة
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-blue', 'text-white');
+                btn.classList.add('text-slate-400');
+            });
+            document.getElementById(`btn-${period}`).classList.add('bg-brand-blue', 'text-white');
+            document.getElementById(`btn-${period}`).classList.remove('text-slate-400');
+
+            loadPeriodInputs();
+            calculateAllKPIs();
+            updateChartData();
+        }
+
+        // قراءة وتعديل البيانات بشكل ديناميكي من لوحة التعديل (Pivot Table Sandbox)
+        function updatePivotData() {
+            activeData.newLeads = parseInt(document.getElementById('input-new').value) || 0;
+            activeData.followUp = parseInt(document.getElementById('input-followup').value) || 0;
+            activeData.won = parseInt(document.getElementById('input-won').value) || 0;
+            activeData.lost = parseInt(document.getElementById('input-lost').value) || 0;
+
+            activeData.marketing = parseInt(document.getElementById('input-marketing').value) || 0;
+            activeData.governance = parseInt(document.getElementById('input-governance').value) || 0;
+            activeData.consulting = parseInt(document.getElementById('input-consulting').value) || 0;
+            activeData.legal = parseInt(document.getElementById('input-legal').value) || 0;
+
+            activeData.csatResponders = parseInt(document.getElementById('input-responders').value) || 0;
+            activeData.csatRating = parseFloat(document.getElementById('input-rating').value) || 0.0;
+
+            calculateAllKPIs();
+            updateChartData();
+        }
+
+        // حساب جميع المؤشرات والنسب
+        function calculateAllKPIs() {
+            const totalLeads = activeData.newLeads + activeData.followUp + activeData.won + activeData.lost;
+            document.getElementById('kpi-total').innerText = totalLeads;
+
+            // 1. معدل التحويل الإجمالي
+            const conversionRate = totalLeads > 0 ? ((activeData.won / totalLeads) * 100).toFixed(1) : '0.0';
+            document.getElementById('kpi-conversion').innerText = `${conversionRate}%`;
+
+            // 2. معدل إغلاق المبيعات الفعلي
+            const closedTotal = activeData.won + activeData.lost;
+            const winRate = closedTotal > 0 ? ((activeData.won / closedTotal) * 100).toFixed(1) : '0.0';
+            document.getElementById('kpi-winrate').innerText = `${winRate}%`;
+
+            // 3. رضا العملاء الموزون الشامل (Weighted CSAT) بناءً على المشاركات الفعلية وحجم العينة
+            let weightedCSAT = 0;
+            if (closedTotal > 0 || activeData.csatResponders > 0) {
+                const operationalRate = activeData.won / closedTotal; // كفاءة مبيعات
+                const feedbackRate = activeData.csatRating / 5; // تقييم عميل
+                
+                const totalWeights = closedTotal + activeData.csatResponders;
+                weightedCSAT = (((operationalRate * closedTotal) + (feedbackRate * activeData.csatResponders)) / totalWeights) * 100;
+            }
+            document.getElementById('kpi-csat').innerText = isNaN(weightedCSAT) ? '0.0%' : `${weightedCSAT.toFixed(1)}%`;
+            document.getElementById('csat-meta').innerText = `بناءً على تواصل (${closedTotal}) وتصويت (${activeData.csatResponders})`;
+
+            // 4. التدفق النشط المتبقي
+            const activeLeads = activeData.newLeads + activeData.followUp;
+            document.getElementById('kpi-active').innerText = activeLeads;
+            
+            const activePercentage = totalLeads > 0 ? ((activeLeads / totalLeads) * 100).toFixed(1) : '0.0';
+            document.getElementById('active-percentage').innerText = `${activePercentage}% من المحفظة تحت المعالجة`;
+        }
+
+        // إنشاء الرسوم البيانية لأول مرة
+        function initCharts() {
+            // أ. رسم مسار مبيعات ومراحل التدفق
+            const ctxPipeline = document.getElementById('pipelineChart').getContext('2d');
+            pipelineChart = new Chart(ctxPipeline, {
+                type: 'doughnut',
+                data: {
+                    labels: ['جديد', 'قيد المتابعة', 'مغلق ناجح', 'مغلق مستبعد'],
+                    datasets: [{
+                        data: [activeData.newLeads, activeData.followUp, activeData.won, activeData.lost],
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#1e293b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // ب. رسم قنوات الاستقطاب مع التزام بالأكواد اللونية الرسمية
+            const ctxAcquisition = document.getElementById('acquisitionChart').getContext('2d');
+            
+            // تدرج إنستغرام الأنيق والمطابق بالملّي
+            const igGrad = ctxAcquisition.createLinearGradient(0, 0, 0, 150);
+            igGrad.addColorStop(0, '#405DE6');
+            igGrad.addColorStop(0.5, '#E1306C');
+            igGrad.addColorStop(1, '#FCAF45');
+
+            acquisitionChart = new Chart(ctxAcquisition, {
+                type: 'pie',
+                data: {
+                    labels: ['صفحة الهبوط', 'إكس (تويتر)', 'يوتيوب', 'واتساب', 'لينكد إن', 'فيسبوك', 'إنستغرام', 'بينتريست', 'تليجرام', 'تيك توك', 'حراج', 'سناب شات'],
+                    datasets: [{
+                        data: [
+                            activeData.acquisition.landingPage, activeData.acquisition.x, activeData.acquisition.youtube, activeData.acquisition.whatsapp,
+                            activeData.acquisition.linkedin, activeData.acquisition.facebook, activeData.acquisition.instagram, activeData.acquisition.pinterest,
+                            activeData.acquisition.telegram, activeData.acquisition.tiktok, activeData.acquisition.haraj, activeData.acquisition.snapchat
+                        ],
+                        backgroundColor: [
+                            '#4f46e5', '#000000', '#FF0000', '#25D366', '#0A66C2', '#1877F2', igGrad, '#E60023', '#24A1DE', '#010101', '#0066CC', '#FFFC00'
+                        ],
+                        borderWidth: 1.5,
+                        borderColor: '#1e293b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // ج. رسم توزيع طلب الاستشارات والخدمات (KPIs)
+            const ctxServices = document.getElementById('servicesChart').getContext('2d');
+            servicesChart = new Chart(ctxServices, {
+                type: 'bar',
+                data: {
+                    labels: ['تسويق وحملات', 'حوكمة مالية', 'مظلة استشارية', 'قانون وعقود'],
+                    datasets: [{
+                        label: 'عدد العملاء والخدمات المطلوبة',
+                        data: [activeData.marketing, activeData.governance, activeData.consulting, activeData.legal],
+                        backgroundColor: ['#0066CC', '#10b981', '#f59e0b', '#8b5cf6'],
+                        borderRadius: 8,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // تحديث الرسوم البيانية بأرقام الفترات المعدلة
+        function updateChartData() {
+            if (!pipelineChart || !acquisitionChart || !servicesChart) return;
+
+            // تحديث خط السير S_KPIs
+            pipelineChart.data.datasets[0].data = [activeData.newLeads, activeData.followUp, activeData.won, activeData.lost];
+            pipelineChart.update();
+
+            // تحديث قنوات الجذب
+            acquisitionChart.data.datasets[0].data = [
+                activeData.acquisition.landingPage, activeData.acquisition.x, activeData.acquisition.youtube, activeData.acquisition.whatsapp,
+                activeData.acquisition.linkedin, activeData.acquisition.facebook, activeData.acquisition.instagram, activeData.acquisition.pinterest,
+                activeData.acquisition.telegram, activeData.acquisition.tiktok, activeData.acquisition.haraj, activeData.acquisition.snapchat
+            ];
+            acquisitionChart.update();
+
+            // تحديث طلب الخدمات KPIs
+            servicesChart.data.datasets[0].data = [activeData.marketing, activeData.governance, activeData.consulting, activeData.legal];
+            servicesChart.update();
+        }
+    </script>
+</body>
+</html>
