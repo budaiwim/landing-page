@@ -622,6 +622,8 @@
                 }
 
                 // ج. معالجة وتدفق أرقام قنوات الإحالة S_M_KPIs
+                // الترتيب الفعلي في الشيت: إجمالي، صفحة الهبوط، سناب شات، حراج، لينكد إن،
+                // فيسبوك، تيك توك، بينتريست، تليجرام، واتساب، يوتيوب، إنستغرام، جاكو، ستار ميكر، أخرى
                 if (channelsRowHeader !== -1 && rows[channelsRowValue]) {
                     const headers = rows[channelsRowHeader].c;
                     const values = rows[channelsRowValue].c;
@@ -630,18 +632,20 @@
                         const hText = String(headers[j].v).trim();
                         const val = parseInt(values[j].v) || 0;
 
-                        if (hText.includes("صفحة الهبوط")) activeData.chanLanding = val;
-                        else if (hText.includes("سناب شات")) activeData.chanSnapchat = val;
-                        else if (hText.includes("حراج")) activeData.chanHaraj = val;
-                        else if (hText.includes("لينكد إن") || hText.includes("لينكد")) activeData.chanLinkedin = val;
-                        else if (hText.includes("فيسبوك")) activeData.chanFacebook = val;
-                        else if (hText.includes("تيك توك") || hText.includes("تيك")) activeData.chanTiktok = val;
-                        else if (hText.includes("إكس") || hText.toLowerCase() === "x") activeData.chanX = val;
-                        else if (hText.includes("يوتيوب")) activeData.chanYoutube = val;
-                        else if (hText.includes("واتساب")) activeData.chanWhatsapp = val;
-                        else if (hText.includes("إنستغرام") || hText.includes("انستغرام")) activeData.chanInstagram = val;
+                        if (hText.includes("صفحة الهبوط"))                          activeData.chanLanding   = val;
+                        else if (hText.includes("سناب"))                             activeData.chanSnapchat  = val;
+                        else if (hText.includes("حراج"))                             activeData.chanHaraj     = val;
+                        else if (hText.includes("لينكد"))                            activeData.chanLinkedin  = val;
+                        else if (hText.includes("فيسبوك"))                           activeData.chanFacebook  = val;
+                        else if (hText.includes("تيك"))                              activeData.chanTiktok    = val;
+                        else if (hText.includes("بينتريست") || hText.includes("بنتر")) activeData.chanPinterest = val;
                         else if (hText.includes("تليجرام") || hText.includes("تلغرام")) activeData.chanTelegram = val;
-                        else if (hText.includes("بينتريست") || hText.includes("بنترست")) activeData.chanPinterest = val;
+                        else if (hText.includes("واتساب"))                           activeData.chanWhatsapp  = val;
+                        else if (hText.includes("يوتيوب"))                           activeData.chanYoutube   = val;
+                        else if (hText.includes("إنستغرام") || hText.includes("انستغرام")) activeData.chanInstagram = val;
+                        else if (hText.includes("جاكو"))                             activeData.chanJako      = val;
+                        else if (hText.includes("ستار"))                             activeData.chanStarmaker = val;
+                        else if (hText.includes("أخرى") || hText.includes("اخرى")) activeData.chanOther     = val;
                     }
                 }
 
@@ -872,16 +876,17 @@
                 type: 'pie',
                 data: {
                     labels: [
-                        'صفحة الهبوط', 'سناب شات', 'حراج', 'لينكد إن', 'فيسبوك', 
-                        'تيك توك', 'إكس (X)', 'يوتيوب', 'واتساب', 'إنستغرام', 
-                        'تليجرام', 'بينتريست'
+                        'صفحة الهبوط', 'سناب شات', 'حراج', 'لينكد إن', 'فيسبوك',
+                        'تيك توك', 'بينتريست', 'تليجرام', 'واتساب', 'يوتيوب',
+                        'إنستغرام', 'جاكو', 'ستار ميكر', 'أخرى'
                     ],
                     datasets: [{
                         data: [
-                            activeData.chanLanding, activeData.chanSnapchat, activeData.chanHaraj, 
-                            activeData.chanLinkedin, activeData.chanFacebook, activeData.chanTiktok, 
-                            activeData.chanX, activeData.chanYoutube, activeData.chanWhatsapp, 
-                            activeData.chanInstagram, activeData.chanTelegram, activeData.chanPinterest
+                            activeData.chanLanding,   activeData.chanSnapchat, activeData.chanHaraj,
+                            activeData.chanLinkedin,  activeData.chanFacebook, activeData.chanTiktok,
+                            activeData.chanPinterest, activeData.chanTelegram, activeData.chanWhatsapp,
+                            activeData.chanYoutube,   activeData.chanInstagram,
+                            activeData.chanJako||0,   activeData.chanStarmaker||0, activeData.chanOther||0
                         ],
                         backgroundColor: [
                             '#334155', // صفحة الهبوط
@@ -890,15 +895,17 @@
                             '#0A66C2', // لينكد إن
                             '#1877F2', // فيسبوك
                             '#111111', // تيك توك
-                            '#2d2d2d', // إكس (X)
-                            '#FF0000', // يوتيوب
-                            '#25D366', // واتساب
-                            '#E1306C', // إنستغرام
+                            '#E60023', // بينتريست
                             '#24A1DE', // تليجرام
-                            '#E60023'  // بينتريست
+                            '#25D366', // واتساب
+                            '#FF0000', // يوتيوب
+                            '#E1306C', // إنستغرام
+                            '#7C3AED', // جاكو
+                            '#F59E0B', // ستار ميكر
+                            '#64748b'  // أخرى
                         ],
-                        borderWidth: [2,2.5,2,2,2,2,2,2,2,2,2,2],
-                        borderColor: ['#1e293b','#64748b','#1e293b','#1e293b','#1e293b','#475569','#475569','#1e293b','#1e293b','#1e293b','#1e293b','#1e293b']
+                        borderWidth: [2,2.5,2,2,2,2,2,2,2,2,2,2,2,2],
+                        borderColor: ['#1e293b','#64748b','#1e293b','#1e293b','#1e293b','#475569','#1e293b','#1e293b','#1e293b','#1e293b','#1e293b','#1e293b','#1e293b','#1e293b']
                     }]
                 },
                 options: {
@@ -925,10 +932,11 @@
 
             // تحديث قنوات الإحالة S_M_KPIs
             channelsChart.data.datasets[0].data = [
-                activeData.chanLanding, activeData.chanSnapchat, activeData.chanHaraj, 
-                activeData.chanLinkedin, activeData.chanFacebook, activeData.chanTiktok, 
-                activeData.chanX, activeData.chanYoutube, activeData.chanWhatsapp, 
-                activeData.chanInstagram, activeData.chanTelegram, activeData.chanPinterest
+                activeData.chanLanding,   activeData.chanSnapchat, activeData.chanHaraj,
+                activeData.chanLinkedin,  activeData.chanFacebook, activeData.chanTiktok,
+                activeData.chanPinterest, activeData.chanTelegram, activeData.chanWhatsapp,
+                activeData.chanYoutube,   activeData.chanInstagram,
+                activeData.chanJako||0,   activeData.chanStarmaker||0, activeData.chanOther||0
             ];
             channelsChart.update();
         }
