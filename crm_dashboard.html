@@ -622,8 +622,8 @@
                 }
 
                 // ج. معالجة وتدفق أرقام قنوات الإحالة S_M_KPIs
-                // الترتيب الفعلي في الشيت: إجمالي، صفحة الهبوط، سناب شات، حراج، لينكد إن،
-                // فيسبوك، تيك توك، بينتريست، تليجرام، واتساب، يوتيوب، إنستغرام، جاكو، ستار ميكر، أخرى
+                // الترتيب: إجمالي، صفحة الهبوط، سناب شات، حراج، لينكد إن، فيسبوك، تيك توك،
+                // بينتريست، تليجرام، واتساب، يوتيوب، إنستغرام، جاكو، ستار ميكر، أخرى
                 if (channelsRowHeader !== -1 && rows[channelsRowValue]) {
                     const headers = rows[channelsRowHeader].c;
                     const values = rows[channelsRowValue].c;
@@ -632,20 +632,20 @@
                         const hText = String(headers[j].v).trim();
                         const val = parseInt(values[j].v) || 0;
 
-                        if (hText.includes("صفحة الهبوط"))                          activeData.chanLanding   = val;
-                        else if (hText.includes("سناب"))                             activeData.chanSnapchat  = val;
-                        else if (hText.includes("حراج"))                             activeData.chanHaraj     = val;
-                        else if (hText.includes("لينكد"))                            activeData.chanLinkedin  = val;
-                        else if (hText.includes("فيسبوك"))                           activeData.chanFacebook  = val;
-                        else if (hText.includes("تيك"))                              activeData.chanTiktok    = val;
+                        if (hText.includes("صفحة الهبوط"))                              activeData.chanLanding   = val;
+                        else if (hText.includes("سناب"))                                activeData.chanSnapchat  = val;
+                        else if (hText.includes("حراج"))                                activeData.chanHaraj     = val;
+                        else if (hText.includes("لينكد"))                               activeData.chanLinkedin  = val;
+                        else if (hText.includes("فيسبوك"))                              activeData.chanFacebook  = val;
+                        else if (hText.includes("تيك"))                                 activeData.chanTiktok    = val;
                         else if (hText.includes("بينتريست") || hText.includes("بنتر")) activeData.chanPinterest = val;
                         else if (hText.includes("تليجرام") || hText.includes("تلغرام")) activeData.chanTelegram = val;
-                        else if (hText.includes("واتساب"))                           activeData.chanWhatsapp  = val;
-                        else if (hText.includes("يوتيوب"))                           activeData.chanYoutube   = val;
+                        else if (hText.includes("واتساب"))                              activeData.chanWhatsapp  = val;
+                        else if (hText.includes("يوتيوب"))                              activeData.chanYoutube   = val;
                         else if (hText.includes("إنستغرام") || hText.includes("انستغرام")) activeData.chanInstagram = val;
-                        else if (hText.includes("جاكو"))                             activeData.chanJako      = val;
-                        else if (hText.includes("ستار"))                             activeData.chanStarmaker = val;
-                        else if (hText.includes("أخرى") || hText.includes("اخرى")) activeData.chanOther     = val;
+                        else if (hText.includes("جاكو"))                                activeData.chanJako      = val;
+                        else if (hText.includes("ستار"))                                activeData.chanStarmaker = val;
+                        else if (hText.includes("أخرى") || hText.includes("اخرى"))    activeData.chanOther     = val;
                     }
                 }
 
