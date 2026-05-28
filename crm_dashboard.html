@@ -58,12 +58,9 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #0066CC;
         }
-        /* إصلاح ألوان فاتحة في legend */
-        .legend-dot-snap { background:#FFFC00; outline:1.5px solid #64748b; }
-        .legend-dot-dark { background:#111111; outline:1.5px solid #475569; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col animate-fade-in">
+<body class="min-h-screen flex flex-col">
 
     <!-- شريط التنقل العلوي -->
     <header class="bg-brand-navy border-b border-slate-800 px-6 py-4 sticky top-0 z-50">
@@ -103,9 +100,9 @@
                         <i class="fa-solid fa-file-excel text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-md font-bold text-white flex items-center gap-2">
+                        <h2 class="text-md font-bold text-white flex items-center gap-2 flex-wrap">
                             مزامنة جداول الـ KPIs المباشرة (Live Pivot Sheet Sync)
-                            <span id="sync-badge" class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">غير متصل - يعرض بيانات افتراضية</span>
+                            <span id="sync-badge" class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700 transition-all">غير متصل - يعرض بيانات افتراضية</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">اربط لوحة البيانات بجدول تلخيص المؤشرات KPIs في قوقل شيت للحصول على سرعة جلب فائقة وحسابات دقيقة فوراً.</p>
                     </div>
@@ -178,8 +175,7 @@
                 </div>
                 <p class="text-sm font-medium text-slate-400">مؤشر الرضا الموزون CSAT</p>
                 <h3 id="kpi-csat" class="text-3xl font-black text-brand-amber mt-2">--%</h3>
-                <div class="text-[10px] text-slate-500 mt-0.5">من 100 (موزون: إغلاق + تقييم)</div>
-                <div class="text-xs text-brand-amber mt-1 flex items-center gap-1 font-bold">
+                <div class="text-xs text-brand-amber mt-2 flex items-center gap-1 font-bold">
                     <span id="csat-meta">حسب الردود الفعلية</span>
                 </div>
             </div>
@@ -197,7 +193,7 @@
             </div>
         </div>
 
-        <!-- القسم الثاني: الرسوم البيانية التفاعلية (مطابقة للشيت 100%) -->
+        <!-- القسم الثاني: الرسوم البيانية التفاعلية -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- 1. مسار مبيعات ومراحل التدفق (S_KPIs) -->
             <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
@@ -209,10 +205,10 @@
                     <canvas id="pipelineChart"></canvas>
                 </div>
                 <div class="grid grid-cols-2 gap-2 mt-4 text-xs text-slate-400">
-                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-500 inline-block"></span>جديد</div>
-                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-500 inline-block"></span>قيد المتابعة</div>
-                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span>مغلق ناجح</div>
-                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500 inline-block"></span>مغلق مستبعد</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-[#0066CC] inline-block"></span>جديد</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-[#f59e0b] inline-block"></span>قيد المتابعة</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-[#10b981] inline-block"></span>مغلق ناجح</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-[#f43f5e] inline-block"></span>مغلق مستبعد</div>
                 </div>
             </div>
 
@@ -231,7 +227,7 @@
                 </div>
             </div>
 
-            <!-- 3. قنوات الإحالة ومصادر الجذب (S_M_KPIs) - جديد ومطابق تماماً -->
+            <!-- 3. قنوات الإحالة ومصادر الجذب (S_M_KPIs) -->
             <div class="bg-brand-navy p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
                 <div>
                     <h3 class="text-md font-bold text-white mb-1"><i class="fa-solid fa-share-nodes text-brand-purple ml-1"></i> قنوات الإحالة ومصادر الجذب (S_M_KPIs)</h3>
@@ -272,23 +268,23 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs text-slate-400 mb-1">جديد</label>
-                                <input type="number" id="input-new" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-white font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                                <input type="number" id="input-new" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-white font-bold transition-all focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs text-slate-400 mb-1">قيد المتابعة</label>
-                                <input type="number" id="input-followup" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-white font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                                <input type="number" id="input-followup" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-white font-bold transition-all focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs text-slate-400 mb-1">مغلق ناجح</label>
-                                <input type="number" id="input-won" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-green font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                                <input type="number" id="input-won" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-green font-bold transition-all focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs text-slate-400 mb-1">مغلق مستبعد</label>
-                                <input type="number" id="input-lost" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-rose font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                                <input type="number" id="input-lost" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-rose font-bold transition-all focus:outline-none">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs text-slate-400 mb-1">تم التواصل (نشاط مساعد)</label>
-                                <input type="number" id="input-contacted" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-blue font-bold transition-all focus:outline-none focus:ring-1 focus:ring-brand-blue">
+                                <input type="number" id="input-contacted" oninput="updatePivotData()" class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-brand-blue rounded-xl px-3 py-2 text-sm text-brand-blue font-bold transition-all focus:outline-none">
                             </div>
                         </div>
                     </div>
@@ -401,7 +397,7 @@
     <!-- تذييل الصفحة -->
     <footer class="bg-brand-navy border-t border-slate-800 px-6 py-4 mt-12 text-center text-xs text-slate-500">
         <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
-            <p>© <span id="footerYear"></span> نظام CRM الذكي المدمج لتحصين الأعمال. جميع الحقوق محفوظة.</p>
+            <p>© 2026 نظام CRM الذكي المدمج لتحصين الأعمال. جميع الحقوق محفوظة.</p>
             <p class="flex items-center gap-1.5">
                 <span>مصمم ومبني بلغة HTML/JS تفاعلية</span>
                 <span class="text-slate-700">|</span>
@@ -412,16 +408,7 @@
 
     <!-- منطق جافا سكريبت لتغذية لوحة البيانات وتفعيلها مع قوقل شيت -->
     <script>
-        // تحديث السنة تلقائياً
-        document.getElementById('footerYear').textContent = new Date().getFullYear();
-
-        // تصريح صريح بالمتغيرات العامة
-        let autoSyncEnabled = false;
-        let autoSyncInterval = null;
-        let currentPeriod = 'annual';
-        let pipelineChart = null, servicesChart = null, channelsChart = null;
-
-        // قاعدة البيانات الافتراضية مطابقة تماماً للملف المرفق الجديد S_M_KPIs و KPIs و S_KPIs
+        // قاعدة البيانات الافتراضية والأساسية للشيت
         const periodDatabase = {
             annual: {
                 newLeads: 6, followUp: 9, won: 9, lost: 1, contacted: 9,
@@ -481,22 +468,37 @@
             }
         };
 
+        let currentPeriod = 'annual';
         let activeData = { ...periodDatabase.annual };
+        let pipelineChart = null;
+        let servicesChart = null;
+        let channelsChart = null;
+        let autoSyncInterval = null;
+        let autoSyncEnabled = false;
 
-        // عند تحميل الصفحة، نحاول استرجاع الإعدادات المحفوظة للربط المباشر
+        // تهيئة فورية و آمنة عند التحميل لحماية الرسوم البيانية من الاختفاء
         window.onload = function() {
+            // 1. شحن البيانات والواجهات بالبيانات الأساسية فوراً لتجنب الفراغ اللحظي
+            loadPeriodInputs();
+            initCharts();
+            calculateAllKPIs();
+
+            // 2. التحقق من وجود ربط محفوظ ومحاولة جلب البيانات في الخلفية
             const savedSheetId = localStorage.getItem('crm_sheet_id');
             const savedSheetName = localStorage.getItem('crm_sheet_name');
             if (savedSheetId) {
                 document.getElementById('sheet-id-input').value = savedSheetId;
                 document.getElementById('sheet-name-input').value = savedSheetName || 'KPIs';
-                connectGoogleSheet(); // الاتصال تلقائياً
-            } else {
-                loadPeriodInputs();
-                initCharts();
-                calculateAllKPIs();
+                connectGoogleSheet(); // سيقوم بالتحديث السلس فور جاهزية البيانات
             }
         };
+
+        // دالة مساعدة لضمان جلب قيمة عددية آمنة وتفادي أخطاء النصوص الفارغة في الشيت
+        function getSafeValue(cell) {
+            if (!cell || cell.v === null || cell.v === undefined) return 0;
+            const parsed = parseInt(cell.v);
+            return isNaN(parsed) ? 0 : parsed;
+        }
 
         // الربط وجلب البيانات المباشر باستخدام Google Sheets Visualization API
         function connectGoogleSheet() {
@@ -521,22 +523,18 @@
             localStorage.setItem('crm_sheet_id', sheetId);
             localStorage.setItem('crm_sheet_name', sheetName);
 
-            // استعلام قوقل شيت جيفز للحصول على استجابة JSON مهيكلة ونظيفة
             const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
 
             fetch(gvizUrl)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('فشل الاستجابة من قوقل');
-                    }
+                    if (!response.ok) throw new Error('فشل الاستجابة من قوقل');
                     return response.text();
                 })
                 .then(text => {
-                    // فك مغلف استجابة Google JSON
                     const startIdx = text.indexOf('{');
                     const endIdx = text.lastIndexOf('}');
                     if (startIdx === -1 || endIdx === -1) {
-                        throw new Error('فشل فك شفرة استجابة البيانات. تأكد من إعداد مشاركة الشيت.');
+                        throw new Error('فشل تفكيك استجابة البيانات. تأكد من إعداد مشاركة الشيت لـ "أي شخص لديه الرابط".');
                     }
                     const jsonStr = text.substring(startIdx, endIdx + 1);
                     const data = JSON.parse(jsonStr);
@@ -545,45 +543,41 @@
                 })
                 .catch(err => {
                     console.error('Connection Error:', err);
-                    showSyncStatus('❌ فشل الاتصال — تأكد من Spreadsheet ID وأن الشيت مشارك كـ "أي شخص قارئ"', 'error');
+                    showSyncStatus('فشل الاتصال: تأكد من خيار مشاركة الشيت كـ "عارض للجميع" ومطابقة اسم التبويب', 'error');
                 });
         }
 
-        // معالجة بيانات ورقة الـ KPIs المطورة وحقنها مباشرة في الـ CRM
+        // معالجة بيانات ورقة الـ KPIs المطورة بكاشف ديناميكي مرن ومضاد للأخطاء
         function processKPIsSheetData(data) {
             try {
                 if (!data.table || !data.table.rows || data.table.rows.length < 2) {
-                    throw new Error("بنية الجدول غير مطابقة");
+                    throw new Error("بنية جدول البيانات غير مطابقة");
                 }
 
                 const rows = data.table.rows;
 
-                // كاشف العناوين الديناميكي للتعامل مع أي ترحيل أو إزاحة في خلايا الشيت
                 let servicesRowHeader = -1, servicesRowValue = -1;
                 let pipelineRowHeader = -1, pipelineRowValue = -1;
                 let channelsRowHeader = -1, channelsRowValue = -1;
 
+                // كاشف الأسطر المطور: يبحث بداخل مصفوفة النصوص المجمعة للسطر لتفادي إزاحة الخلايا
                 for (let i = 0; i < rows.length; i++) {
                     const row = rows[i];
                     if (!row || !row.c) continue;
 
-                    // 1. تحديد مكان جدول الخدمات
-                    if (row.c[0] && String(row.c[0].v).includes("عدد العملاء")) {
+                    const rowTextJoin = row.c.map(cell => cell ? String(cell.v).trim() : "").join(" | ");
+
+                    if (rowTextJoin.includes("عدد العملاء") || rowTextJoin.includes("تسويق رقمي")) {
                         servicesRowHeader = i;
                         servicesRowValue = i + 1;
                     }
-                    // 2. تحديد مكان جدول حالات العملاء
-                    if (row.c[0] && String(row.c[0].v).includes("جديد")) {
+                    if (rowTextJoin.includes("جديد") && rowTextJoin.includes("مغلق ناجح")) {
                         pipelineRowHeader = i;
                         pipelineRowValue = i + 1;
                     }
-                    // 3. تحديد مكان جدول قنوات الإحالة
-                    for (let j = 0; j < row.c.length; j++) {
-                        if (row.c[j] && String(row.c[j].v).includes("إجمالي قنوات الإحالة")) {
-                            channelsRowHeader = i;
-                            channelsRowValue = i + 1;
-                            break;
-                        }
+                    if (rowTextJoin.includes("قنوات الإحالة") || rowTextJoin.includes("صفحة الهبوط")) {
+                        channelsRowHeader = i;
+                        channelsRowValue = i + 1;
                     }
                 }
 
@@ -594,7 +588,7 @@
                     for (let j = 0; j < headers.length; j++) {
                         if (!headers[j] || !values[j]) continue;
                         const hText = String(headers[j].v).trim();
-                        const val = parseInt(values[j].v) || 0;
+                        const val = getSafeValue(values[j]);
 
                         if (hText.includes("تسويق رقمي")) activeData.marketing = val;
                         else if (hText.includes("مظلة استشارية")) activeData.consulting = val;
@@ -611,7 +605,7 @@
                     for (let j = 0; j < headers.length; j++) {
                         if (!headers[j] || !values[j]) continue;
                         const hText = String(headers[j].v).trim();
-                        const val = parseInt(values[j].v) || 0;
+                        const val = getSafeValue(values[j]);
 
                         if (hText.includes("جديد")) activeData.newLeads = val;
                         else if (hText.includes("قيد المتابعة")) activeData.followUp = val;
@@ -622,42 +616,40 @@
                 }
 
                 // ج. معالجة وتدفق أرقام قنوات الإحالة S_M_KPIs
-                // الترتيب: إجمالي، صفحة الهبوط، سناب شات، حراج، لينكد إن، فيسبوك، تيك توك،
-                // بينتريست، تليجرام، واتساب، يوتيوب، إنستغرام، جاكو، ستار ميكر، أخرى
                 if (channelsRowHeader !== -1 && rows[channelsRowValue]) {
                     const headers = rows[channelsRowHeader].c;
                     const values = rows[channelsRowValue].c;
                     for (let j = 0; j < headers.length; j++) {
                         if (!headers[j] || !values[j]) continue;
                         const hText = String(headers[j].v).trim();
-                        const val = parseInt(values[j].v) || 0;
+                        const val = getSafeValue(values[j]);
 
-                        if (hText.includes("صفحة الهبوط"))                              activeData.chanLanding   = val;
-                        else if (hText.includes("سناب"))                                activeData.chanSnapchat  = val;
-                        else if (hText.includes("حراج"))                                activeData.chanHaraj     = val;
-                        else if (hText.includes("لينكد"))                               activeData.chanLinkedin  = val;
-                        else if (hText.includes("فيسبوك"))                              activeData.chanFacebook  = val;
-                        else if (hText.includes("تيك"))                                 activeData.chanTiktok    = val;
-                        else if (hText.includes("بينتريست") || hText.includes("بنتر")) activeData.chanPinterest = val;
-                        else if (hText.includes("تليجرام") || hText.includes("تلغرام")) activeData.chanTelegram = val;
-                        else if (hText.includes("واتساب"))                              activeData.chanWhatsapp  = val;
-                        else if (hText.includes("يوتيوب"))                              activeData.chanYoutube   = val;
+                        if (hText.includes("صفحة الهبوط"))                               activeData.chanLanding   = val;
+                        else if (hText.includes("سناب"))                                  activeData.chanSnapchat  = val;
+                        else if (hText.includes("حراج"))                                   activeData.chanHaraj     = val;
+                        else if (hText.includes("لينكد"))                                  activeData.chanLinkedin  = val;
+                        else if (hText.includes("فيسبوك"))                                 activeData.chanFacebook  = val;
+                        else if (hText.includes("تيك"))                                    activeData.chanTiktok    = val;
+                        else if (hText.includes("بينتريست") || hText.includes("بنتر"))    activeData.chanPinterest = val;
+                        else if (hText.includes("تليجرام") || hText.includes("تلغرام"))   activeData.chanTelegram  = val;
+                        else if (hText.includes("واتساب"))                                 activeData.chanWhatsapp  = val;
+                        else if (hText.includes("يوتيوب"))                                 activeData.chanYoutube   = val;
                         else if (hText.includes("إنستغرام") || hText.includes("انستغرام")) activeData.chanInstagram = val;
-                        else if (hText.includes("جاكو"))                                activeData.chanJako      = val;
-                        else if (hText.includes("ستار"))                                activeData.chanStarmaker = val;
-                        else if (hText.includes("أخرى") || hText.includes("اخرى"))    activeData.chanOther     = val;
+                        else if (hText.includes("جاكو"))                                   activeData.chanJako      = val;
+                        else if (hText.includes("ستار"))                                   activeData.chanStarmaker = val;
+                        else if (hText.includes("أخرى") || hText.includes("اخرى"))        activeData.chanOther     = val;
                     }
                 }
 
-                // تحديث الواجهة التفاعلية والرسوم البيانية مباشرة
+                // تحديث الواجهة التفاعلية والرسوم البيانية المجهزة مسبقاً
                 loadPeriodInputs();
                 calculateAllKPIs();
                 updateChartData();
 
-                showSyncStatus('تمت المزامنة اللحظية للـ KPIs وقنوات الجذب بنجاح 100%!', 'success');
+                showSyncStatus('تمت المزامنة اللحظية والتحليل بنجاح 100%!', 'success');
             } catch (error) {
                 console.error("Parsing Error: ", error);
-                showSyncStatus('⚠️ تعذّر قراءة البيانات — تأكد أن أسماء الأعمدة في الشيت مطابقة للمتوقع', 'error');
+                showSyncStatus('تنبيه: تم الاتصال، ولكن بنية خلايا KPIs مختلفة عن الشيت المطلوب', 'error');
             }
         }
 
@@ -666,9 +658,9 @@
             const badge = document.getElementById('sync-badge');
             badge.innerText = msg;
             if (type === 'success') {
-                badge.className = "px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse font-bold";
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold animate-pulse";
             } else if (type === 'connecting') {
-                badge.className = "px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse font-bold";
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold animate-pulse";
             } else if (type === 'error') {
                 badge.className = "px-2 py-0.5 rounded text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold";
             } else {
@@ -918,7 +910,7 @@
             });
         }
 
-        // تحديث الرسوم البيانية بأرقام الفترات المعدلة
+        // تحديث الرسوم البيانية بأرقام الفترات المعدلة بشكل آمن وسلس
         function updateChartData() {
             if (!pipelineChart || !servicesChart || !channelsChart) return;
 
