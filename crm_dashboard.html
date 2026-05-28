@@ -58,6 +58,9 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #0066CC;
         }
+        /* إصلاح ألوان فاتحة في legend */
+        .legend-dot-snap { background:#FFFC00; outline:1.5px solid #64748b; }
+        .legend-dot-dark { background:#111111; outline:1.5px solid #475569; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col animate-fade-in">
@@ -175,7 +178,8 @@
                 </div>
                 <p class="text-sm font-medium text-slate-400">مؤشر الرضا الموزون CSAT</p>
                 <h3 id="kpi-csat" class="text-3xl font-black text-brand-amber mt-2">--%</h3>
-                <div class="text-xs text-brand-amber mt-2 flex items-center gap-1 font-bold">
+                <div class="text-[10px] text-slate-500 mt-0.5">من 100 (موزون: إغلاق + تقييم)</div>
+                <div class="text-xs text-brand-amber mt-1 flex items-center gap-1 font-bold">
                     <span id="csat-meta">حسب الردود الفعلية</span>
                 </div>
             </div>
@@ -397,7 +401,7 @@
     <!-- تذييل الصفحة -->
     <footer class="bg-brand-navy border-t border-slate-800 px-6 py-4 mt-12 text-center text-xs text-slate-500">
         <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
-            <p>© 2026 نظام CRM الذكي المدمج لتحصين الأعمال. جميع الحقوق محفوظة.</p>
+            <p>© <span id="footerYear"></span> نظام CRM الذكي المدمج لتحصين الأعمال. جميع الحقوق محفوظة.</p>
             <p class="flex items-center gap-1.5">
                 <span>مصمم ومبني بلغة HTML/JS تفاعلية</span>
                 <span class="text-slate-700">|</span>
@@ -408,6 +412,15 @@
 
     <!-- منطق جافا سكريبت لتغذية لوحة البيانات وتفعيلها مع قوقل شيت -->
     <script>
+        // تحديث السنة تلقائياً
+        document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+        // تصريح صريح بالمتغيرات العامة
+        let autoSyncEnabled = false;
+        let autoSyncInterval = null;
+        let currentPeriod = 'annual';
+        let pipelineChart = null, servicesChart = null, channelsChart = null;
+
         // قاعدة البيانات الافتراضية مطابقة تماماً للملف المرفق الجديد S_M_KPIs و KPIs و S_KPIs
         const periodDatabase = {
             annual: {
@@ -468,11 +481,7 @@
             }
         };
 
-        let currentPeriod = 'annual';
         let activeData = { ...periodDatabase.annual };
-        let pipelineChart, servicesChart, channelsChart;
-        let autoSyncInterval = null;
-        let autoSyncEnabled = false;
 
         // عند تحميل الصفحة، نحاول استرجاع الإعدادات المحفوظة للربط المباشر
         window.onload = function() {
@@ -536,7 +545,7 @@
                 })
                 .catch(err => {
                     console.error('Connection Error:', err);
-                    showSyncStatus('فشل الاتصال: تأكد من مشاركة الشيت كـ "عارض للجميع" ومطابقة اسم الورقة', 'error');
+                    showSyncStatus('❌ فشل الاتصال — تأكد من Spreadsheet ID وأن الشيت مشارك كـ "أي شخص قارئ"', 'error');
                 });
         }
 
@@ -644,7 +653,7 @@
                 showSyncStatus('تمت المزامنة اللحظية للـ KPIs وقنوات الجذب بنجاح 100%!', 'success');
             } catch (error) {
                 console.error("Parsing Error: ", error);
-                showSyncStatus('تنبيه: تم الاتصال، ولكن بنية خلايا KPIs مختلفة عن الشيت المرفق', 'error');
+                showSyncStatus('⚠️ تعذّر قراءة البيانات — تأكد أن أسماء الأعمدة في الشيت مطابقة للمتوقع', 'error');
             }
         }
 
@@ -880,16 +889,16 @@
                             '#0066CC', // حراج
                             '#0A66C2', // لينكد إن
                             '#1877F2', // فيسبوك
-                            '#000000', // تيك توك
-                            '#111111', // إكس (X)
+                            '#111111', // تيك توك
+                            '#2d2d2d', // إكس (X)
                             '#FF0000', // يوتيوب
                             '#25D366', // واتساب
                             '#E1306C', // إنستغرام
                             '#24A1DE', // تليجرام
                             '#E60023'  // بينتريست
                         ],
-                        borderWidth: 2,
-                        borderColor: '#1e293b'
+                        borderWidth: [2,2.5,2,2,2,2,2,2,2,2,2,2],
+                        borderColor: ['#1e293b','#64748b','#1e293b','#1e293b','#1e293b','#475569','#475569','#1e293b','#1e293b','#1e293b','#1e293b','#1e293b']
                     }]
                 },
                 options: {
