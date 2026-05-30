@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lemonada:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Firebase SDK -->
 <script type="module">
@@ -141,47 +143,307 @@
   }
 
   // ═══════════════════════════════════════════
-  // MODULE 1 — DASHBOARD KPIs
+  // MODULE 1 — DASHBOARD (Full Charts + Firebase)
   // ═══════════════════════════════════════════
+  let _dashAllLeads = [];
+  let _dashAllInvoices = [];
+  let _dashAllBookings = [];
+  let _dashAllComms = [];
+  let _dashCharts = {};
+  let _dashPeriod = 'all';
+
+  const CHART_COLORS = ['#E2C97A','#27AE60','#C0392B','#2980B9','#8B6914','#9B59B6','#1ABC9C','#E67E22','#E74C3C','#34495E'];
+
+  function dashGetPeriodLeads() {
+    if (_dashPeriod === 'all') return _dashAllLeads;
+    const now = new Date();
+    const year = now.getFullYear();
+    return _dashAllLeads.filter(l => {
+      const ts = l.createdAt?.seconds;
+      if (!ts) return false;
+      const d = new Date(ts * 1000);
+      if (_dashPeriod === 'year') return d.getFullYear() === year;
+      if (_dashPeriod === 'q1') return d.getFullYear() === year && d.getMonth() < 3;
+      if (_dashPeriod === 'q2') return d.getFullYear() === year && d.getMonth() >= 3 && d.getMonth() < 6;
+      if (_dashPeriod === 'q3') return d.getFullYear() === year && d.getMonth() >= 6 && d.getMonth() < 9;
+      if (_dashPeriod === 'q4') return d.getFullYear() === year && d.getMonth() >= 9;
+      if (_dashPeriod === 'h1') return d.getFullYear() === year && d.getMonth() < 6;
+      if (_dashPeriod === 'h2') return d.getFullYear() === year && d.getMonth() >= 6;
+      return true;
+    });
+  }
+
+  function dashSetPeriod(period, btn) {
+    _dashPeriod = period;
+    document.querySelectorAll('#dash-period-filters .filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    dashRenderAll();
+  }
+
+  function dashRenderAll() {
+    const leads = dashGetPeriodLeads();
+    const invoices = _dashAllInvoices;
+    const bookings = _dashAllBookings;
+    const comms = _dashAllComms;
+
+    const totalLeads = leads.length;
+    const won = leads.filter(l => l.status === 'مغلق ناجح').length;
+    const convRate = totalLeads ? ((won / totalLeads) * 100).toFixed(1) : 0;
+    const revenue = invoices.filter(i => i.status === 'مدفوعة').reduce((s, i) => s + (i.subtotal || i.amount || 0), 0);
+    const pending = bookings.filter(b => b.status === 'مؤكد').length;
+    const commTotal = comms.reduce((s, c) => s + (c.amount || 0), 0);
+
+    document.getElementById('kpi-leads').textContent = totalLeads;
+    document.getElementById('kpi-conv').textContent = convRate + '%';
+    document.getElementById('kpi-revenue').textContent = revenue.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('kpi-bookings').textContent = pending;
+    document.getElementById('kpi-comms').textContent = commTotal.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('kpi-won').textContent = won;
+
+    const followUp = leads.filter(l => l.status === 'قيد المتابعة').length;
+    const excluded = leads.filter(l => l.status === 'مغلق مستبعد').length;
+    const newLeads = leads.filter(l => !l.status || l.status === 'جديد').length;
+    document.getElementById('kpi-leads-sub').textContent = `جديد: ${newLeads} | متابعة: ${followUp}`;
+    document.getElementById('kpi-conv-sub').textContent = `${won} ناجح من ${totalLeads} عميل`;
+    document.getElementById('kpi-revenue-sub').textContent = `فواتير مدفوعة: ${invoices.filter(i => i.status === 'مدفوعة').length}`;
+
+    // ── CHART 1: Stage donut ──
+    const stageCounts = {
+      'جديد': newLeads,
+      'قيد المتابعة': followUp,
+      'مغلق ناجح': won,
+      'مغلق مستبعد': excluded
+    };
+    const stageLabels = Object.keys(stageCounts);
+    const stageData = Object.values(stageCounts);
+    const stageColors = ['#2980B9','#E2C97A','#27AE60','#C0392B'];
+    dashDestroyChart('ch-stage');
+    _dashCharts['ch-stage'] = new Chart(document.getElementById('ch-stage'), {
+      type: 'doughnut',
+      data: { labels: stageLabels, datasets: [{ data: stageData, backgroundColor: stageColors, borderWidth: 2, borderColor: '#15120A' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+    document.getElementById('ch-stage-legend').innerHTML = stageLabels.map((l, i) =>
+      `<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${stageColors[i]};display:inline-block"></span>${l}: ${stageData[i]}</span>`
+    ).join('');
+
+    // ── CHART 2: Source pie ──
+    const sourceCounts = {};
+    leads.forEach(l => { const s = l.source || 'غير محدد'; sourceCounts[s] = (sourceCounts[s] || 0) + 1; });
+    const srcLabels = Object.keys(sourceCounts);
+    const srcData = Object.values(sourceCounts);
+    dashDestroyChart('ch-source');
+    _dashCharts['ch-source'] = new Chart(document.getElementById('ch-source'), {
+      type: 'pie',
+      data: { labels: srcLabels, datasets: [{ data: srcData, backgroundColor: CHART_COLORS.slice(0, srcLabels.length), borderWidth: 2, borderColor: '#15120A' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+    const srcTotal = srcData.reduce((a, b) => a + b, 0) || 1;
+    document.getElementById('ch-source-legend').innerHTML = srcLabels.map((l, i) =>
+      `<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${CHART_COLORS[i]};display:inline-block"></span>${l} ${Math.round(srcData[i] / srcTotal * 100)}%</span>`
+    ).join('');
+
+    // ── CHART 3: Project bar ──
+    const projCounts = {};
+    leads.forEach(l => { const p = l.project || 'غير محدد'; projCounts[p] = (projCounts[p] || 0) + 1; });
+    const projLabels = Object.keys(projCounts);
+    const projData = Object.values(projCounts);
+    dashDestroyChart('ch-project');
+    _dashCharts['ch-project'] = new Chart(document.getElementById('ch-project'), {
+      type: 'bar',
+      data: { labels: projLabels, datasets: [{ label: 'عدد العملاء', data: projData, backgroundColor: CHART_COLORS.slice(0, projLabels.length), borderRadius: 5 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#6B5E3F', stepSize: 1 }, grid: { color: '#2A2415' } },
+          x: { ticks: { color: '#6B5E3F', maxRotation: 30, font: { size: 9 } }, grid: { color: '#2A2415' } }
+        }
+      }
+    });
+
+    // ── CHART 4: Monthly trend ──
+    const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const monthCounts = Array(12).fill(0);
+    _dashAllLeads.forEach(l => {
+      const ts = l.createdAt?.seconds;
+      if (ts) { const d = new Date(ts * 1000); monthCounts[d.getMonth()]++; }
+    });
+    const cumulMonths = [];
+    let cum = 0;
+    monthCounts.forEach(v => { cum += v; cumulMonths.push(cum); });
+    dashDestroyChart('ch-trend');
+    _dashCharts['ch-trend'] = new Chart(document.getElementById('ch-trend'), {
+      type: 'line',
+      data: {
+        labels: monthNames,
+        datasets: [
+          { label: 'تراكمي', data: cumulMonths, borderColor: '#E2C97A', backgroundColor: 'rgba(226,201,122,0.1)', tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: '#E2C97A' },
+          { label: 'شهري', data: monthCounts, borderColor: '#27AE60', backgroundColor: 'rgba(39,174,96,0.07)', tension: 0.4, fill: false, pointRadius: 3, pointBackgroundColor: '#27AE60', borderDash: [5, 3] }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#A09070', font: { size: 9 } } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#6B5E3F', stepSize: 1 }, grid: { color: '#2A2415' } },
+          x: { ticks: { color: '#6B5E3F', font: { size: 9 } }, grid: { color: '#2A2415' } }
+        }
+      }
+    });
+
+    // ── CHART 5: Quarterly conversion ──
+    const qLeads = [0, 0, 0, 0];
+    const qWon   = [0, 0, 0, 0];
+    _dashAllLeads.forEach(l => {
+      const ts = l.createdAt?.seconds;
+      if (!ts) return;
+      const m = new Date(ts * 1000).getMonth();
+      const q = Math.floor(m / 3);
+      qLeads[q]++;
+      if (l.status === 'مغلق ناجح') qWon[q]++;
+    });
+    const qConv = qLeads.map((t, i) => t ? Math.round(qWon[i] / t * 100) : 0);
+    dashDestroyChart('ch-conversion');
+    _dashCharts['ch-conversion'] = new Chart(document.getElementById('ch-conversion'), {
+      type: 'bar',
+      data: {
+        labels: ['الربع الأول','الربع الثاني','الربع الثالث','الربع الرابع'],
+        datasets: [
+          { label: 'إجمالي العملاء', data: qLeads, backgroundColor: 'rgba(41,128,185,0.7)', borderRadius: 4 },
+          { label: 'مغلق ناجح', data: qWon, backgroundColor: 'rgba(39,174,96,0.8)', borderRadius: 4 },
+          { label: 'معدل التحويل %', data: qConv, backgroundColor: 'rgba(226,201,122,0.8)', borderRadius: 4, type: 'line', yAxisID: 'y2', borderColor: '#E2C97A', tension: 0.4, fill: false, pointRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#A09070', font: { size: 9 } } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#6B5E3F', stepSize: 1 }, grid: { color: '#2A2415' } },
+          y2: { position: 'left', beginAtZero: true, max: 100, ticks: { color: '#E2C97A', callback: v => v + '%' }, grid: { drawOnChartArea: false } },
+          x: { ticks: { color: '#6B5E3F' }, grid: { color: '#2A2415' } }
+        }
+      }
+    });
+
+    // ── RECENT TABLE ──
+    const recent = [...leads].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)).slice(0, 8);
+    document.getElementById('recent-leads-tbody').innerHTML = recent.map(l => {
+      const dateStr = l.createdAt?.seconds ? new Date(l.createdAt.seconds * 1000).toLocaleDateString('ar-SA') : '—';
+      return `<tr class="tr-row">
+        <td class="td">${l.name||'—'}</td>
+        <td class="td font-mono">${l.phone||'—'}</td>
+        <td class="td">${l.project||'—'}</td>
+        <td class="td"><span class="badge badge-${statusClass(l.status)}">${l.status||'جديد'}</span></td>
+        <td class="td">${l.source||'—'}</td>
+        <td class="td">${dateStr}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" class="empty-state">لا توجد بيانات في هذه الفترة</td></tr>`;
+
+    document.getElementById('dash-last-update').textContent =
+      'بيانات حية من Firebase — آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
+  }
+
+  function dashDestroyChart(id) {
+    if (_dashCharts[id]) { _dashCharts[id].destroy(); delete _dashCharts[id]; }
+  }
+
   async function loadDashboard() {
     try {
+      document.getElementById('recent-leads-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">جاري التحميل...</td></tr>';
       const [leadsSnap, bookSnap, invSnap, affSnap] = await Promise.all([
-        getDocs(collection(db,'leads')),
-        getDocs(collection(db,'bookings')),
-        getDocs(collection(db,'invoices')),
-        getDocs(collection(db,'commissions')),
+        getDocs(collection(db, 'leads')),
+        getDocs(collection(db, 'bookings')),
+        getDocs(collection(db, 'invoices')),
+        getDocs(collection(db, 'commissions')),
       ]);
-      const leads    = leadsSnap.docs.map(d=>d.data());
-      const bookings = bookSnap.docs.map(d=>d.data());
-      const invoices = invSnap.docs.map(d=>d.data());
-      const comms    = affSnap.docs.map(d=>d.data());
+      _dashAllLeads    = leadsSnap.docs.map(d => d.data());
+      _dashAllBookings = bookSnap.docs.map(d => d.data());
+      _dashAllInvoices = invSnap.docs.map(d => d.data());
+      _dashAllComms    = affSnap.docs.map(d => d.data());
+      dashRenderAll();
+    } catch(e) {
+      toast('خطأ في تحميل لوحة المؤشرات', 'error');
+      console.error(e);
+    }
+  }
 
-      const totalLeads   = leads.length;
-      const won          = leads.filter(l=>l.status==='مغلق ناجح').length;
-      const convRate     = totalLeads ? ((won/totalLeads)*100).toFixed(1) : 0;
-      // الإيراد الصافي قبل الضريبة (subtotal) لاستبعاد الضريبة من الأرباح
-      const revenue      = invoices.filter(i=>i.status==='مدفوعة').reduce((s,i)=>s+(i.subtotal||i.amount||0),0);
-      const pending      = bookings.filter(b=>b.status==='مؤكد').length;
-      const commTotal    = comms.reduce((s,c)=>s+(c.amount||0),0);
+  // ── EXPORT Excel ──
+  function dashExportExcel() {
+    if (!window.XLSX) return toast('مكتبة Excel غير محملة بعد', 'error');
+    const leads = dashGetPeriodLeads();
+    const wb = XLSX.utils.book_new();
+    // Sheet 1: KPIs summary
+    const won = leads.filter(l => l.status === 'مغلق ناجح').length;
+    const conv = leads.length ? ((won / leads.length) * 100).toFixed(1) : 0;
+    const revenue = _dashAllInvoices.filter(i => i.status === 'مدفوعة').reduce((s, i) => s + (i.subtotal || i.amount || 0), 0);
+    const kpiSheet = XLSX.utils.aoa_to_sheet([
+      ['المؤشر', 'القيمة'],
+      ['إجمالي العملاء', leads.length],
+      ['مغلق ناجح', won],
+      ['معدل التحويل', conv + '%'],
+      ['الإيرادات المحصّلة', revenue],
+      ['حجوزات مؤكدة', _dashAllBookings.filter(b => b.status === 'مؤكد').length],
+    ]);
+    XLSX.utils.book_append_sheet(wb, kpiSheet, 'ملخص المؤشرات');
+    // Sheet 2: Leads
+    const leadsRows = [['الاسم', 'الجوال', 'المشروع', 'الحالة', 'المصدر', 'تاريخ الإضافة']];
+    leads.forEach(l => {
+      const dateStr = l.createdAt?.seconds ? new Date(l.createdAt.seconds * 1000).toLocaleDateString('ar-SA') : '';
+      leadsRows.push([l.name || '', l.phone || '', l.project || '', l.status || '', l.source || '', dateStr]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(leadsRows), 'بيانات العملاء');
+    // Sheet 3: Invoices
+    const invRows = [['رقم الفاتورة', 'العميل', 'المبلغ', 'الحالة', 'التاريخ']];
+    _dashAllInvoices.forEach(i => invRows.push([i.invoiceNumber || '', i.clientName || '', i.amount || 0, i.status || '', i.date || '']));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(invRows), 'الفواتير');
+    XLSX.writeFile(wb, 'تقرير_ERP_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    toast('تم تصدير التقرير ✓');
+  }
 
-      document.getElementById('kpi-leads').textContent    = totalLeads;
-      document.getElementById('kpi-conv').textContent     = convRate + '%';
-      document.getElementById('kpi-revenue').textContent  = revenue.toLocaleString('ar-SA') + ' ﷼';
-      document.getElementById('kpi-bookings').textContent = pending;
-      document.getElementById('kpi-comms').textContent    = commTotal.toLocaleString('ar-SA') + ' ﷼';
-      document.getElementById('kpi-won').textContent      = won;
-
-      // مؤخراً
-      const recent = leads.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,5);
-      const tbody = document.getElementById('recent-leads-tbody');
-      tbody.innerHTML = recent.map(l=>`
-        <tr class="tr-row">
-          <td class="td">${l.name||'—'}</td>
-          <td class="td">${l.phone||'—'}</td>
-          <td class="td"><span class="badge badge-${statusClass(l.status)}">${l.status||'جديد'}</span></td>
-          <td class="td">${l.source||'—'}</td>
-        </tr>`).join('');
-    } catch(e) { toast('خطأ في تحميل لوحة المؤشرات','error'); }
+  // ── IMPORT Excel ──
+  async function dashImportExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!window.XLSX) return toast('مكتبة Excel غير محملة', 'error');
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        const headers = rows[0] || [];
+        const nameIdx   = headers.findIndex(h => String(h).includes('اسم') || String(h).toLowerCase().includes('name'));
+        const phoneIdx  = headers.findIndex(h => String(h).includes('جوال') || String(h).includes('هاتف') || String(h).toLowerCase().includes('phone'));
+        const projIdx   = headers.findIndex(h => String(h).includes('مشروع') || String(h).includes('خدمة'));
+        const srcIdx    = headers.findIndex(h => String(h).includes('مصدر') || String(h).toLowerCase().includes('source'));
+        const dataRows = rows.slice(1).filter(r => r.length > 0 && (r[nameIdx] || r[0]));
+        if (dataRows.length === 0) return toast('لم يتم العثور على بيانات', 'error');
+        let added = 0;
+        for (const r of dataRows) {
+          const name  = String(r[nameIdx !== -1 ? nameIdx : 0] || '').trim();
+          const phone = String(r[phoneIdx !== -1 ? phoneIdx : 1] || '').trim();
+          if (!name) continue;
+          await addDoc(collection(db, 'leads'), {
+            name,
+            phone: phone || '',
+            project: projIdx !== -1 ? String(r[projIdx] || '') : '',
+            source:  srcIdx  !== -1 ? String(r[srcIdx]  || '') : 'استيراد Excel',
+            status: 'جديد',
+            createdAt: serverTimestamp(),
+            addedBy: currentUser.uid
+          });
+          added++;
+        }
+        toast(`تم استيراد ${added} عميل بنجاح ✓`);
+        await loadDashboard();
+      } catch(err) {
+        toast('خطأ في قراءة الملف', 'error');
+        console.error(err);
+      }
+    };
+    reader.readAsBinaryString(file);
+    input.value = '';
   }
 
   // ═══════════════════════════════════════════
@@ -826,6 +1088,7 @@
     addAffiliate, addCommission, payCommission, deleteAffiliate,
     createUser, updateUserRole,
     openModal, closeModal,
+    dashSetPeriod, dashExportExcel, dashImportExcel,
     handleEnter: (e,fn)=>{ if(e.key==='Enter') window[fn](); }
   });
 </script>
@@ -1030,6 +1293,19 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
   .nav-item { justify-content: center; padding: 12px 6px; }
 }
 .hidden { display: none !important; }
+.font-bold { font-weight: 700; }
+.font-mono { font-family: monospace; }
+
+@media print {
+  .sidebar, #dash-period-filters, button, .btn-primary, .btn-xs, #dash-import-zone { display: none !important; }
+  .main-content { overflow: visible !important; }
+  #module-dashboard { padding: 10px !important; }
+  .kpi-card::before { display: none; }
+  body { background: #fff !important; color: #000 !important; }
+  .table-wrap, .kpi-card { border: 1px solid #ccc !important; background: #fff !important; }
+  .kpi-val, .table-title, .page-title { color: #000 !important; }
+  canvas { max-height: 180px !important; }
+}
 </style>
 </head>
 <body>
@@ -1040,7 +1316,7 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
 ════════════════════════════════════════ -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">🏆</div>
+    <div class="login-logo"><img src="https://budaiwim.com/assets/img/logo_pic.png" alt="شعار المستشار عبدالاله بدوي" style="width:74px;height:74px;object-fit:contain;border-radius:12px"></div>
     <h1 class="login-title">النواة الرباعية ERP</h1>
     <p class="login-sub">نظام إدارة الأعمال المتكامل — المستشار عبدالاله بدوي</p>
     <div class="form-group">
@@ -1113,20 +1389,88 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
     <!-- MODULE: DASHBOARD -->
     <div id="module-dashboard" class="module-panel">
       <div class="page-header">
-        <div><div class="page-title">📊 لوحة المؤشرات الرئيسية</div><div class="page-sub">بيانات حية من Firebase Firestore</div></div>
+        <div>
+          <div class="page-title">📊 لوحة المؤشرات الذكية</div>
+          <div class="page-sub" id="dash-last-update">بيانات حية من Firebase Firestore — جاري التحميل...</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div class="filters" id="dash-period-filters">
+            <button class="filter-btn active" onclick="dashSetPeriod('all',this)">الكل</button>
+            <button class="filter-btn" onclick="dashSetPeriod('year',this)">هذا العام</button>
+            <button class="filter-btn" onclick="dashSetPeriod('q1',this)">ر١</button>
+            <button class="filter-btn" onclick="dashSetPeriod('q2',this)">ر٢</button>
+            <button class="filter-btn" onclick="dashSetPeriod('q3',this)">ر٣</button>
+            <button class="filter-btn" onclick="dashSetPeriod('q4',this)">ر٤</button>
+            <button class="filter-btn" onclick="dashSetPeriod('h1',this)">ن١</button>
+            <button class="filter-btn" onclick="dashSetPeriod('h2',this)">ن٢</button>
+          </div>
+          <button class="btn-primary" onclick="dashExportExcel()" style="font-size:10px;padding:7px 12px">⬇ Excel</button>
+          <button class="btn-primary" onclick="window.print()" style="font-size:10px;padding:7px 12px;background:var(--gold-dark)">🖨 PDF</button>
+        </div>
       </div>
+
+      <!-- KPI CARDS -->
       <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-label">إجمالي العملاء</div><div class="kpi-val" id="kpi-leads">—</div></div>
-        <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-label">معدل التحويل</div><div class="kpi-val" id="kpi-conv">—</div></div>
-        <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-label">الإيرادات المحصّلة</div><div class="kpi-val" id="kpi-revenue">—</div></div>
+        <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-label">إجمالي العملاء</div><div class="kpi-val" id="kpi-leads">—</div><div class="kpi-change" id="kpi-leads-sub" style="font-size:9px;color:var(--muted);margin-top:4px"></div></div>
+        <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-label">معدل التحويل (Win Rate)</div><div class="kpi-val" id="kpi-conv">—</div><div class="kpi-change" id="kpi-conv-sub" style="font-size:9px;color:var(--muted);margin-top:4px"></div></div>
+        <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-label">الإيرادات المحصّلة</div><div class="kpi-val" id="kpi-revenue">—</div><div class="kpi-change" id="kpi-revenue-sub" style="font-size:9px;color:var(--muted);margin-top:4px"></div></div>
         <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-label">حجوزات مؤكدة</div><div class="kpi-val" id="kpi-bookings">—</div></div>
         <div class="kpi-card"><div class="kpi-icon">🤝</div><div class="kpi-label">عمولات مسوّقين</div><div class="kpi-val" id="kpi-comms">—</div></div>
-        <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-label">صفقات مغلقة</div><div class="kpi-val" id="kpi-won">—</div></div>
+        <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-label">صفقات مغلقة ناجحة</div><div class="kpi-val" id="kpi-won">—</div></div>
       </div>
+
+      <!-- CHARTS ROW 1 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <!-- مراحل التدفق -->
+        <div class="table-wrap" style="padding:16px">
+          <div class="table-title" style="margin-bottom:4px">🔄 توزيع مراحل التدفق</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:12px">حالة وحركية العملاء في النظام</div>
+          <div style="position:relative;height:200px"><canvas id="ch-stage" role="img" aria-label="مخطط دائري لمراحل التدفق"></canvas></div>
+          <div id="ch-stage-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:9px;color:var(--muted)"></div>
+        </div>
+        <!-- المصادر -->
+        <div class="table-wrap" style="padding:16px">
+          <div class="table-title" style="margin-bottom:4px">📡 قنوات الإحالة ومصادر الجذب</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:12px">توزيع العملاء حسب قناة الاكتساب</div>
+          <div style="position:relative;height:200px"><canvas id="ch-source" role="img" aria-label="مخطط دائري للمصادر"></canvas></div>
+          <div id="ch-source-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:9px;color:var(--muted)"></div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW 2 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <!-- المشاريع -->
+        <div class="table-wrap" style="padding:16px">
+          <div class="table-title" style="margin-bottom:4px">💼 طلب الخدمات والمشاريع</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:12px">حجم الطلب على كل خدمة استشارية</div>
+          <div style="position:relative;height:200px"><canvas id="ch-project" role="img" aria-label="مخطط عمودي للمشاريع"></canvas></div>
+        </div>
+        <!-- الاتجاه الزمني -->
+        <div class="table-wrap" style="padding:16px">
+          <div class="table-title" style="margin-bottom:4px">📈 الاتجاه الزمني للعملاء</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:12px">تراكم العملاء الجدد شهرياً</div>
+          <div style="position:relative;height:200px"><canvas id="ch-trend" role="img" aria-label="مخطط خطي للاتجاه الزمني"></canvas></div>
+        </div>
+      </div>
+
+      <!-- CHART ROW 3 - FULL WIDTH -->
+      <div class="table-wrap" style="padding:16px;margin-bottom:14px">
+        <div class="table-title" style="margin-bottom:4px">🏅 معدل الإغلاق والتحويل ربعياً</div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:12px">مقارنة أداء المبيعات عبر الأرباع</div>
+        <div style="position:relative;height:180px"><canvas id="ch-conversion" role="img" aria-label="مخطط مقارن للمعدلات ربعياً"></canvas></div>
+      </div>
+
+      <!-- IMPORT ZONE -->
+      <div id="dash-import-zone" style="border:1.5px dashed #2A2415;border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:10px;color:var(--muted);margin-bottom:14px;transition:.2s" onclick="document.getElementById('dash-file-input').click()" onmouseover="this.style.borderColor='#8B6914'" onmouseout="this.style.borderColor='#2A2415'">
+        ⬆ اسحب ملف Excel أو CSV هنا لاستيراد بيانات العملاء، أو انقر للاختيار
+        <input type="file" id="dash-file-input" accept=".xlsx,.csv" style="display:none" onchange="dashImportExcel(this)">
+      </div>
+
+      <!-- RECENT TABLE -->
       <div class="table-wrap">
         <div class="table-header"><span class="table-title">⚡ آخر العملاء المسجّلين</span></div>
-        <table><thead><tr><th>الاسم</th><th>الجوال</th><th>الحالة</th><th>المصدر</th></tr></thead>
-        <tbody id="recent-leads-tbody"><tr><td colspan="4" class="empty-state">جاري التحميل...</td></tr></tbody></table>
+        <table><thead><tr><th>الاسم</th><th>الجوال</th><th>المشروع</th><th>الحالة</th><th>المصدر</th><th>التاريخ</th></tr></thead>
+        <tbody id="recent-leads-tbody"><tr><td colspan="6" class="empty-state">جاري التحميل...</td></tr></tbody></table>
       </div>
     </div>
 
