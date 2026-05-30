@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منظومة النواة الرباعية — ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lemonada:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
+  import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
+    getDocs, getDoc, query, orderBy, onSnapshot, serverTimestamp, where, increment, setDoc, limit }
+    from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+  import { getAnalytics } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js';
+
+  // ═══════════════════════════════════════════
+  // 🔧 FIREBASE CONFIG
+  // ═══════════════════════════════════════════
+  const firebaseConfig = {
+    apiKey:            "AIzaSyAa0iRUM17oBdPVfC9oKe8gEMVJeCMYNWo",
+    authDomain:        "badawi-erp.firebaseapp.com",
+    projectId:         "badawi-erp",
+    storageBucket:     "badawi-erp.firebasestorage.app",
+    messagingSenderId: "962373295267",
+    appId:             "1:962373295267:web:a8f433c9a9d084ee31b316",
+    measurementId:     "G-R66E13V9ZE"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // ═══════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════
+  let currentUser = null;
+  let currentRole = 'staff';
+  let activeModule = 'dashboard';
+  let unsubscribers = [];
+  let isInitialLoad = true; 
+
+  // ═══════════════════════════════════════════
+  // AUTH — مراقبة الجلسة
+  // ═══════════════════════════════════════════
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      currentRole = snap.exists() ? (snap.data().role || 'staff') : 'staff';
+      showERP();
+      loadModule('dashboard');
+      applyRolePermissions();
+      initLiveBookingNotifications(); 
+    } else {
+      currentUser = null;
+      showLogin();
+    }
+  });
+
+  async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-pass').value;
+    const btn   = document.getElementById('login-btn');
+    const err   = document.getElementById('login-error');
+    err.textContent = '';
+    btn.textContent = 'جاري الدخول...';
+    btn.disabled = true;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch(e) {
+      err.textContent = 'بيانات الدخول غير صحيحة';
+      btn.textContent = 'دخول';
+      btn.disabled = false;
+    }
+  }
+
+  async function logout() {
+    unsubscribers.forEach(u => u());
+    unsubscribers = [];
+    isInitialLoad = true;
+    await signOut(auth);
+  }
+
+  // ═══════════════════════════════════════════
+  // 🔔 LIVE NOTIFICATIONS SYSTEM (تنبيهات مخصصة بحسب الحالة)
+  // ═══════════════════════════════════════════
+  function initLiveBookingNotifications() {
+    const bookingsRef = collection(db, "bookings");
+    const qLive = query(bookingsRef, orderBy("updatedAt", "desc"), limit(1));
+
+    const unsubLive = onSnapshot(qLive, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const booking = change.doc.data();
+        
+        if (!isInitialLoad) {
+          if (change.type === "added") {
+            playNotificationSound('new');
+            showCustomNotificationToast(booking, 'new');
+          }
+          
+          if (change.type === "modified") {
+            if (booking.status === 'مؤكد') {
+              playNotificationSound('confirmed');
+              showCustomNotificationToast(booking, 'confirmed');
+            } else if (booking.status === 'ملغي') {
+              playNotificationSound('cancelled');
+              showCustomNotificationToast(booking, 'cancelled');
+            }
+          }
+
+          if (activeModule === 'dashboard') loadDashboard();
+          if (activeModule === 'bookings') loadBookings();
+        }
+      });
+      isInitialLoad = false;
+    }, (error) => {
+      console.error("خطأ في مراقبة التنبيهات اللحظية:", error);
+    });
+
+    unsubscribers.push(unsubLive);
+  }
+
+  function playNotificationSound(type) {
+    let soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-500.wav'; 
+    if (type === 'confirmed') {
+      soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2019/2019-500.wav'; 
+    } else if (type === 'cancelled') {
+      soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2568/2568-500.wav'; 
+    }
+    const audio = new Audio(soundUrl);
+    audio.play().catch(e => console.log("المتصفح حجب التشغيل التلقائي للصوت:", e));
+  }
+
+  function showCustomNotificationToast(booking, type) {
+    const container = document.getElementById('toast-zone');
+    if (!container) return;
+
+    const liveToast = document.createElement('div');
+    liveToast.className = 'toast';
+    liveToast.style.boxShadow = '0 4px 25px rgba(0,0,0,0.4)';
+    liveToast.style.minWidth = '290px';
+    liveToast.style.borderRight = '5px solid'; 
+
+    if (type === 'new') {
+      liveToast.style.backgroundColor = '#1C1912'; 
+      liveToast.style.borderColor = '#E2C97A'; 
+      liveToast.innerHTML = `
+        <div style="text-align: right; direction: rtl;">
+          <strong style="color: #E2C97A; display: block; margin-bottom: 4px; font-size: 13px;">🔔 حجز جديد قيد الانتظار</strong>
+          <span style="font-size: 11px; display: block; color: #FFF;">العميل: ${booking.clientName || 'غير مسجل'}</span>
+          <span style="font-size: 10px; display: block; color: #A09070;">الخدمة: ${booking.sessionType || 'استشارة'}</span>
+        </div>
+      `;
+    } 
+    else if (type === 'confirmed') {
+      liveToast.style.backgroundColor = '#0F1A13'; 
+      liveToast.style.borderColor = '#27AE60'; 
+      liveToast.innerHTML = `
+        <div style="text-align: right; direction: rtl;">
+          <strong style="color: #27AE60; display: block; margin-bottom: 4px; font-size: 13px;">✅ تم تأكيد الحجز بنجاح</strong>
+          <span style="font-size: 11px; display: block; color: #FFF;">العميل: ${booking.clientName || 'غير مسجل'}</span>
+          <span style="font-size: 10px; display: block; color: #7FBA97;">الموعد: ${booking.bookingDate} | ${booking.bookingTime}</span>
+        </div>
+      `;
+    } 
+    else if (type === 'cancelled') {
+      liveToast.style.backgroundColor = '#1A1011'; 
+      liveToast.style.borderColor = '#C0392B'; 
+      liveToast.innerHTML = `
+        <div style="text-align: right; direction: rtl;">
+          <strong style="color: #C0392B; display: block; margin-bottom: 4px; font-size: 13px;">❌ تم إلغاء حجز العميل</strong>
+          <span style="font-size: 11px; display: block; color: #FFF;">العميل: ${booking.clientName || 'غير مسجل'}</span>
+          <span style="font-size: 10px; display: block; color: #C68982;">حالة الإجراء: تم النقل للأرشيف المعزول</span>
+        </div>
+      `;
+    }
+
+    container.appendChild(liveToast);
+    setTimeout(() => liveToast.remove(), 6000); 
+  }
+
+  // ═══════════════════════════════════════════
+  // UI ROUTING
+  // ═══════════════════════════════════════════
+  function showLogin() {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('erp-screen').classList.add('hidden');
+  }
+  function showERP() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('erp-screen').classList.remove('hidden');
+    document.getElementById('user-name-display').textContent = currentUser.email.split('@')[0];
+    document.getElementById('user-role-display').textContent = 
+      currentRole === 'admin' ? 'مدير النظام' : currentRole === 'manager' ? 'مدير' : 'موظف';
+  }
+
+  function loadModule(name) {
+    activeModule = name;
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.toggle('nav-active', el.dataset.module === name);
+    });
+    document.querySelectorAll('.module-panel').forEach(el => el.classList.add('hidden'));
+    const panel = document.getElementById('module-' + name);
+    if (panel) panel.classList.remove('hidden');
+    const loaders = {
+      dashboard:  loadDashboard,
+      crm:        loadCRM,
+      bookings:   loadBookings,
+      quotes:     loadQuotes,
+      invoices:   loadInvoices,
+      accounting: loadAccounting,
+      affiliates: loadAffiliates,
+      users:      loadUsers,
+    };
+    if (loaders[name]) loaders[name]();
+  }
+
+  function applyRolePermissions() {
+    if (currentRole !== 'admin') {
+      document.querySelectorAll('[data-admin-only]').forEach(el => el.classList.add('hidden'));
+    }
+    if (currentRole === 'staff') {
+      document.querySelectorAll('[data-manager-only]').forEach(el => el.classList.add('hidden'));
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  // TOAST
+  // ═══════════════════════════════════════════
+  function toast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.textContent = msg;
+    document.getElementById('toast-zone').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ═══════════════════════════════════════════
+  // MODULE 1 — DASHBOARD (Full Charts + Firebase)
+  // ═══════════════════════════════════════════
+  let _dashAllLeads = [];
+  let _dashAllInvoices = [];
+  let _dashAllBookings = [];
+  let _dashAllComms = [];
+  let _dashCharts = {};
+  let _dashPeriod = 'all';
+
+  const CHART_COLORS = ['#E2C97A','#27AE60','#C0392B','#2980B9','#8B6914','#9B59B6','#1ABC9C','#E67E22','#E74C3C','#34495E'];
+
+  function dashGetPeriodLeads() {
+    if (_dashPeriod === 'all') return _dashAllLeads;
+    const now = new Date();
+    const year = now.getFullYear();
+    return _dashAllLeads.filter(l => {
+      const ts = l.createdAt?.seconds;
+      if (!ts) return false;
+      const d = new Date(ts * 1000);
+      if (_dashPeriod === 'year') return d.getFullYear() === year;
+      if (_dashPeriod === 'q1') return d.getFullYear() === year && d.getMonth() < 3;
+      if (_dashPeriod === 'q2') return d.getFullYear() === year && d.getMonth() >= 3 && d.getMonth() < 6;
+      if (_dashPeriod === 'q3') return d.getFullYear() === year && d.getMonth() >= 6 && d.getMonth() < 9;
+      if (_dashPeriod === 'q4') return d.getFullYear() === year && d.getMonth() >= 9;
+      if (_dashPeriod === 'h1') return d.getFullYear() === year && d.getMonth() < 6;
+      if (_dashPeriod === 'h2') return d.getFullYear() === year && d.getMonth() >= 6;
+      return true;
+    });
+  }
+
+  function dashSetPeriod(period, btn) {
+    _dashPeriod = period;
+    document.querySelectorAll('#dash-period-filters .filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    dashRenderAll();
+  }
+
+  function dashRenderAll() {
+    const leads = dashGetPeriodLeads();
+    const invoices = _dashAllInvoices;
+    const bookings = _dashAllBookings;
+    const comms = _dashAllComms;
+
+    const totalLeads = leads.length;
+    const won = leads.filter(l => l.status === 'مغلق ناجح').length;
+    const convRate = totalLeads ? ((won / totalLeads) * 100).toFixed(1) : 0;
+    const revenue = invoices.filter(i => i.status === 'مدفوعة').reduce((s, i) => s + (i.subtotal || i.amount || 0), 0);
+    const pending = bookings.filter(b => b.status === 'مؤكد').length;
+    const commTotal = comms.reduce((s, c) => s + (c.amount || 0), 0);
+
+    document.getElementById('kpi-leads').textContent = totalLeads;
+    document.getElementById('kpi-conv').textContent = convRate + '%';
+    document.getElementById('kpi-revenue').textContent = revenue.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('kpi-bookings').textContent = pending;
+    document.getElementById('kpi-comms').textContent = commTotal.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('kpi-won').textContent = won;
+
+    const followUp = leads.filter(l => l.status === 'قيد المتابعة').length;
+    const excluded = leads.filter(l => l.status === 'مغلق مستبعد').length;
+    const newLeads = leads.filter(l => !l.status || l.status === 'جديد').length;
+    document.getElementById('kpi-leads-sub').textContent = `جديد: ${newLeads} | متابعة: ${followUp}`;
+    document.getElementById('kpi-conv-sub').textContent = `${won} ناجح من ${totalLeads} عميل`;
+    document.getElementById('kpi-revenue-sub').textContent = `فواتير مدفوعة: ${invoices.filter(i => i.status === 'مدفوعة').length}`;
+
+    // Donut
+    const stageCounts = { 'جديد': newLeads, 'قيد المتابعة': followUp, 'مغلق ناجح': won, 'مغلق مستبعد': excluded };
+    const stageLabels = Object.keys(stageCounts);
+    const stageData = Object.values(stageCounts);
+    const stageColors = ['#2980B9','#E2C97A','#27AE60','#C0392B'];
+    dashDestroyChart('ch-stage');
+    _dashCharts['ch-stage'] = new Chart(document.getElementById('ch-stage'), {
+      type: 'doughnut',
+      data: { labels: stageLabels, datasets: [{ data: stageData, backgroundColor: stageColors, borderWidth: 2, borderColor: '#15120A' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+    document.getElementById('ch-stage-legend').innerHTML = stageLabels.map((l, i) =>
+      `<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${stageColors[i]};display:inline-block"></span>${l}: ${stageData[i]}</span>`
+    ).join('');
+
+    // Pie
+    const sourceCounts = {};
+    leads.forEach(l => { const s = l.source || 'غير محدد'; sourceCounts[s] = (sourceCounts[s] || 0) + 1; });
+    const srcLabels = Object.keys(sourceCounts);
+    const srcData = Object.values(sourceCounts);
+    dashDestroyChart('ch-source');
+    _dashCharts['ch-source'] = new Chart(document.getElementById('ch-source'), {
+      type: 'pie',
+      data: { labels: srcLabels, datasets: [{ data: srcData, backgroundColor: CHART_COLORS.slice(0, srcLabels.length), borderWidth: 2, borderColor: '#15120A' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+    const srcTotal = srcData.reduce((a, b) => a + b, 0) || 1;
+    document.getElementById('ch-source-legend').innerHTML = srcLabels.map((l, i) =>
+      `<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${CHART_COLORS[i]};display:inline-block"></span>${l} ${Math.round(srcData[i] / srcTotal * 100)}%</span>`
+    ).join('');
+
+    // Bar
+    const projCounts = {};
+    leads.forEach(l => { const p = l.project || 'غير محدد'; projCounts[p] = (projCounts[p] || 0) + 1; });
+    const projLabels = Object.keys(projCounts);
+    const projData = Object.values(projCounts);
+    dashDestroyChart('ch-project');
+    _dashCharts['ch-project'] = new Chart(document.getElementById('ch-project'), {
+      type: 'bar',
+      data: { labels: projLabels, datasets: [{ label: 'عدد العملاء', data: projData, backgroundColor: CHART_COLORS.slice(0, projLabels.length), borderRadius: 5 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#6B5E3F', stepSize: 1 }, grid: { color: '#2A2415' } },
+          x: { ticks: { color: '#6B5E3F', maxRotation: 30, font: { size: 9 } }, grid: { color: '#2A2415' } }
+        }
+      }
+    });
+
+    // Trend
+    const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const monthCounts = Array(12).fill(0);
+    _dashAllLeads.forEach(l => {
+      const ts = l.createdAt?.seconds;
+      if (ts) { const d = new Date(ts * 1000); monthCounts[d.getMonth()]++; }
+    });
+    const cumulMonths = [];
+    let cum = 0;
+    monthCounts.forEach(v => { cum += v; cumulMonths.push(cum); });
+    dashDestroyChart('ch-trend');
+    _dashCharts['ch-trend'] = new Chart(document.getElementById('ch-trend'), {
+      type: 'line',
+      data: {
+        labels: monthNames,
+        datasets: [
+          { label: 'تراكمي', data: cumulMonths, borderColor: '#E2C97A', backgroundColor: 'rgba(226,201,122,0.1)', tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: '#E2C97A' },
+          { label: 'شهري', data: monthCounts, borderColor: '#27AE60', backgroundColor: 'rgba(39,174,96,0.07)', tension: 0.4, fill: false, pointRadius: 3, pointBackgroundColor: '#27AE60', borderDash: [5, 3] }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#A09070', font: { size: 9 } } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#6B5E3F', stepSize: 1 }, grid: { color: '#2A2415' } },
+          x: { ticks: { color: '#6B5E3F', font: { size: 9 } }, grid: { color: '#2A2415' } }
+        }
+      }
+    });
+
+    // Conversion
+    const qLeads = [0, 0, 0, 0];
+    const qWon   = [0, 0, 0, 0];
+    _dashAllLeads.forEach(l => {
+      const ts = l.createdAt?.seconds;
+      if (!ts) return;
+      const m = new Date(ts * 1000).getMonth();
+      const q = Math.floor(m / 3);
+      qLeads[q]++;
+      if (l.status === 'مغلق ناجح') qWon[q]++;
+    });
+    const qConv = qLeads.map((t, i) => t ? Math.round(qWon[i] / t * 100) : 0);
+    dashDestroyChart('ch-conversion');
+    _dashCharts['ch-conversion'] = new Chart(document.getElementById('ch-conversion'), {
+      type: 'bar',
+      data: {
+        labels: ['الربع الأول','الربع الثاني','الربع الثالث','الربع الرابع'],
+        datasets: [
+          { label: 'إجمالي العملاء', data: qLeads, backgroundColor: 'rgba(41,128,185,0.7)', borderRadius: 4 },
+          { label: 'مغلق ناجح', data: qWon, backgroundColor: 'rgba(39,174,96,0.8)', borderRadius: 4 },
+          { label: 'معدل التحويل %', data: qConv, backgroundColor: 'rgba(226,201,122,0.8)', borderRadius: 4, type: 'line', yAxisID: 'y2', borderColor: '#E2C97A', tension: 0.4, fill: false, pointRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#A09070', font: { size: 9 } } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#6B5E3F', stepSize: 1 }, grid: { color: '#2A2415' } },
+          y2: { position: 'left', beginAtZero: true, max: 100, ticks: { color: '#E2C97A', callback: v => v + '%' }, grid: { drawOnChartArea: false } },
+          x: { ticks: { color: '#6B5E3F' }, grid: { color: '#2A2415' } }
+        }
+      }
+    });
+
+    // Table
+    const recent = [...leads].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)).slice(0, 8);
+    document.getElementById('recent-leads-tbody').innerHTML = recent.map(l => {
+      const dateStr = l.createdAt?.seconds ? new Date(l.createdAt.seconds * 1000).toLocaleDateString('ar-SA') : '—';
+      return `<tr class="tr-row">
+        <td class="td">${l.name||'—'}</td>
+        <td class="td font-mono">${l.phone||'—'}</td>
+        <td class="td">${l.project||'—'}</td>
+        <td class="td"><span class="badge badge-${statusClass(l.status)}">${l.status||'جديد'}</span></td>
+        <td class="td">${l.source||'—'}</td>
+        <td class="td">${dateStr}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" class="empty-state">لا توجد بيانات في هذه الفترة</td></tr>`;
+
+    document.getElementById('dash-last-update').textContent =
+      'بيانات حية من Firebase — آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
+  }
+
+  function dashDestroyChart(id) {
+    if (_dashCharts[id]) { _dashCharts[id].destroy(); delete _dashCharts[id]; }
+  }
+
+  async function loadDashboard() {
+    try {
+      document.getElementById('recent-leads-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">جاري التحميل...</td></tr>';
+      const [leadsSnap, bookSnap, invSnap, affSnap] = await Promise.all([
+        getDocs(collection(db, 'leads')),
+        getDocs(collection(db, 'bookings')),
+        getDocs(collection(db, 'invoices')),
+        getDocs(collection(db, 'commissions')),
+      ]);
+      _dashAllLeads    = leadsSnap.docs.map(d => d.data());
+      _dashAllBookings = bookSnap.docs.map(d => d.data());
+      _dashAllInvoices = invSnap.docs.map(d => d.data());
+      _dashAllComms    = affSnap.docs.map(d => d.data());
+      dashRenderAll();
+    } catch(e) {
+      toast('خطأ في تحميل لوحة المؤشرات', 'error');
+      console.error(e);
+    }
+  }
+
+  function dashExportExcel() {
+    if (!window.XLSX) return toast('مكتبة Excel غير محملة بعد', 'error');
+    const leads = dashGetPeriodLeads();
+    const wb = XLSX.utils.book_new();
+    const won = leads.filter(l => l.status === 'مغلق ناجح').length;
+    const conv = leads.length ? ((won / leads.length) * 100).toFixed(1) : 0;
+    const revenue = _dashAllInvoices.filter(i => i.status === 'مدفوعة').reduce((s, i) => s + (i.subtotal || i.amount || 0), 0);
+    const kpiSheet = XLSX.utils.aoa_to_sheet([
+      ['المؤشر', 'القيمة'],
+      ['إجمالي العملاء', leads.length],
+      ['مغلق ناجح', won],
+      ['معدل التحويل', conv + '%'],
+      ['الإيرادات المحصّلة', revenue],
+      ['حجوزات مؤكدة', _dashAllBookings.filter(b => b.status === 'مؤكد').length],
+    ]);
+    XLSX.utils.book_append_sheet(wb, kpiSheet, 'ملخص المؤشرات');
+    const leadsRows = [['الاسم', 'الجوال', 'المشروع', 'الحالة', 'المصدر', 'تاريخ الإضافة']];
+    leads.forEach(l => {
+      const dateStr = l.createdAt?.seconds ? new Date(l.createdAt.seconds * 1000).toLocaleDateString('ar-SA') : '';
+      leadsRows.push([l.name || '', l.phone || '', l.project || '', l.status || '', l.source || '', dateStr]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(leadsRows), 'بيانات العملاء');
+    const invRows = [['رقم الفاتورة', 'العميل', 'المبلغ', 'الحالة', 'التاريخ']];
+    _dashAllInvoices.forEach(i => invRows.push([i.invoiceNumber || '', i.clientName || '', i.amount || 0, i.status || '', i.date || '']));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(invRows), 'الفواتير');
+    XLSX.writeFile(wb, 'تقرير_ERP_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    toast('تم تصدير التقرير ✓');
+  }
+
+  async function dashImportExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!window.XLSX) return toast('مكتبة Excel غير محملة', 'error');
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        const headers = rows[0] || [];
+        const nameIdx = headers.findIndex(h => String(h).includes('اسم') || String(h).toLowerCase().includes('name'));
+        const phoneIdx = headers.findIndex(h => String(h).includes('جوال') || String(h).includes('هاتف') || String(h).toLowerCase().includes('phone'));
+        const projIdx = headers.findIndex(h => String(h).includes('مشروع') || String(h).includes('خدمة'));
+        const srcIdx = headers.findIndex(h => String(h).includes('مصدر') || String(h).toLowerCase().includes('source'));
+        const dataRows = rows.slice(1).filter(r => r.length > 0 && (r[nameIdx] || r[0]));
+        if (dataRows.length === 0) return toast('لم يتم العثور على بيانات', 'error');
+        let added = 0;
+        for (const r of dataRows) {
+          const name = String(r[nameIdx !== -1 ? nameIdx : 0] || '').trim();
+          const phone = String(r[phoneIdx !== -1 ? phoneIdx : 1] || '').trim();
+          if (!name) continue;
+          await addDoc(collection(db, 'leads'), {
+            name, phone: phone || '',
+            project: projIdx !== -1 ? String(r[projIdx] || '') : '',
+            source:  srcIdx  !== -1 ? String(r[srcIdx]  || '') : 'استيراد Excel',
+            status: 'جديد', createdAt: serverTimestamp(), addedBy: currentUser.uid
+          });
+          added++;
+        }
+        toast(`تم استيراد ${added} عميل بنجاح ✓`);
+        await loadDashboard();
+      } catch(err) {
+        toast('خطأ في قراءة الملف', 'error');
+        console.error(err);
+      }
+    };
+    reader.readAsBinaryString(file);
+    input.value = '';
+  }
+
+  // ═══════════════════════════════════════════
+  // MODULE 2 — CRM
+  // ═══════════════════════════════════════════
+  let leadsData = [];
+  async function loadCRM() {
+    const q = query(collection(db,'leads'), orderBy('createdAt','desc'));
+    const snap = await getDocs(q);
+    leadsData = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderLeads();
+  }
+
+  function renderLeads(filter='') {
+    const data = filter ? leadsData.filter(l=>l.status===filter) : leadsData;
+    document.getElementById('crm-count').textContent = data.length + ' عميل';
+    document.getElementById('crm-tbody').innerHTML = data.map(l=>`
+      <tr class="tr-row">
+        <td class="td font-bold">${l.name||'—'}</td>
+        <td class="td font-mono">${l.phone||'—'}</td>
+        <td class="td">${l.project||'—'}</td>
+        <td class="td"><span class="badge badge-${statusClass(l.status)}">${l.status||'جديد'}</span></td>
+        <td class="td">${l.source||'—'}</td>
+        <td class="td">
+          <select onchange="updateLeadStatus('${l.id}',this.value)" class="sel-mini">
+            ${['جديد','قيد المتابعة','مغلق ناجح','مغلق مستبعد'].map(s=>`
+              <option ${l.status===s?'selected':''} value="${s}">${s}</option>`).join('')}
+          </select>
+        </td>
+        <td class="td">
+          <button onclick="openWhatsApp('${l.phone}','${l.name}','${l.project||''}')" class="btn-xs btn-green">واتساب</button>
+          <button onclick="deleteLead('${l.id}')" class="btn-xs btn-red" data-manager-only>حذف</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function addLead() {
+    const name = v('lead-name'); const phone = v('lead-phone');
+    const project = v('lead-project'); const source = v('lead-source');
+    if(!name||!phone) return toast('الاسم والجوال مطلوبان','error');
+    await addDoc(collection(db,'leads'),{
+      name, phone, project, source, status:'جديد',
+      createdAt: serverTimestamp(), addedBy: currentUser.uid
+    });
+    closeModal('modal-add-lead'); toast('تم إضافة العميل ✓'); loadCRM();
+  }
+
+  async function updateLeadStatus(id, status) {
+    await updateDoc(doc(db,'leads',id), { status, updatedAt: serverTimestamp() });
+    const lead = leadsData.find(l=>l.id===id); if(lead) lead.status = status;
+    toast('تم تحديث الحالة ✓');
+  }
+
+  async function deleteLead(id) {
+    if(!confirm('حذف العميل نهائياً؟')) return;
+    await deleteDoc(doc(db,'leads',id)); toast('تم الحذف'); loadCRM();
+  }
+
+  function openWhatsApp(phone, name, project) {
+    const msg = encodeURIComponent(`مرحباً ${name}،\nمعك المستشار عبدالاله بدوي بخصوص: ${project}\nاحجز موعدك: https://calendar.app.google/9Y2F5hCLp6cm4Qmx6`);
+    window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
+  }
+
+  // ═══════════════════════════════════════════
+  // MODULE 3 — BOOKINGS
+  // ═══════════════════════════════════════════
+  let bookingsData = [];
+  const SESSION_TYPES = [
+    { label:'تشخيص مجاني',        duration:15,  price:0   },
+    { label:'استشارة متخصصة',     duration:30,  price:299 },
+    { label:'استشارة معمّقة',      duration:60,  price:499 },
+    { label:'جلسة النواة الرباعية', duration:90, price:699 },
+  ];
+
+  async function loadBookings() {
+    const q = query(collection(db,'bookings'), orderBy('bookingDate','desc'));
+    const snap = await getDocs(q);
+    bookingsData = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderBookings(); renderCalendar();
+  }
+
+  function renderBookings(filter='') {
+    const data = filter ? bookingsData.filter(b=>b.status===filter) : bookingsData;
+    document.getElementById('bookings-tbody').innerHTML = data.map(b=>`
+      <tr class="tr-row">
+        <td class="td font-bold">${b.clientName||'—'}</td>
+        <td class="td font-mono">${b.clientPhone||'—'}</td>
+        <td class="td">${b.sessionType||'—'}</td>
+        <td class="td font-mono">${b.bookingDate||'—'} ${b.bookingTime||''}</td>
+        <td class="td">${b.price ? b.price.toLocaleString('ar-SA')+' ﷼' : 'مجاني'}</td>
+        <td class="td"><span class="badge badge-${statusClass(b.status)}">${b.status||'مؤكد'}</span></td>
+        <td class="td">
+          <button onclick="cancelBooking('${b.id}')" class="btn-xs btn-red" data-manager-only>إلغاء</button>
+          <button onclick="openWhatsApp('${b.clientPhone}','${b.clientName}','')" class="btn-xs btn-green">واتساب</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function addBooking() {
+    const clientName = v('book-name'); const clientPhone = v('book-phone');
+    const sessionIdx = parseInt(v('book-session')); const bookingDate = v('book-date'); const bookingTime = v('book-time');
+    if(!clientName||!clientPhone||!bookingDate||!bookingTime) return toast('جميع الحقول مطلوبة','error');
+    const session = SESSION_TYPES[sessionIdx];
+    const conflict = bookingsData.find(b=> b.bookingDate===bookingDate && b.bookingTime===bookingTime && b.status!=='ملغي');
+    if(conflict) return toast('هذا الموعد محجوز بالفعل','error');
+    await addDoc(collection(db,'bookings'),{
+      clientName, clientPhone, sessionType: session.label, duration: session.duration, price: session.price,
+      bookingDate, bookingTime, status:'مؤكد', createdAt: serverTimestamp(), updatedAt: serverTimestamp(), addedBy: currentUser.uid
+    });
+    await addDoc(collection(db,'leads'),{
+      name: clientName, phone: clientPhone, project: session.label, source:'حجز مباشر', status:'جديد', createdAt: serverTimestamp(), addedBy: currentUser.uid
+    });
+    closeModal('modal-add-booking'); toast('تم تأكيد الحجز ✓'); loadBookings();
+  }
+
+  async function cancelBooking(id) {
+    if(!confirm('إلغاء الحجز؟')) return;
+    await updateDoc(doc(db,'bookings',id),{ status:'ملغي', updatedAt: serverTimestamp() });
+    toast('تم الإلغاء'); loadBookings();
+  }
+
+  function renderCalendar() {
+    const today = new Date(); const weekDays = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس']; const slots = [];
+    for(let d=0; d<7; d++){
+      const date = new Date(today); date.setDate(today.getDate()+d);
+      if([0,1,2,3,4].includes(date.getDay())) {
+        const dateStr = date.toISOString().slice(0,10);
+        const dayBookings = bookingsData.filter(b=>b.bookingDate===dateStr && b.status==='مؤكد');
+        slots.push({ dateStr, dayName: weekDays[date.getDay()], day: date.getDate(), bookings: dayBookings });
+      }
+    }
+    document.getElementById('calendar-grid').innerHTML = slots.map(s=>`
+      <div class="cal-day">
+        <div class="cal-day-header">${s.dayName} ${s.day}</div>
+        ${s.bookings.length ? s.bookings.map(b=>`<div class="cal-event">${b.bookingTime} — ${b.clientName}</div>`).join('') : '<div class="cal-empty">متاح</div>'}
+      </div>`).join('');
+  }
+
+  // ═══════════════════════════════════════════
+  // MODULE 4 — QUOTES
+  // ═══════════════════════════════════════════
+  let quotesData = []; let quoteItems = [];
+  async function loadQuotes() {
+    const q = query(collection(db,'quotes'), orderBy('createdAt','desc'));
+    const snap = await getDocs(q); quotesData = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderQuotes();
+  }
+  function renderQuotes() {
+    document.getElementById('quotes-tbody').innerHTML = quotesData.map(q=>`
+      <tr class="tr-row">
+        <td class="td font-mono text-gold">${q.quoteNumber||'—'}</td>
+        <td class="td font-bold">${q.clientName||'—'}</td>
+        <td class="td">${q.date||'—'}</td>
+        <td class="td font-mono">${(q.total||0).toLocaleString('ar-SA')} ﷼</td>
+        <td class="td"><span class="badge badge-${q.status==='مقبول'?'green':q.status==='مرفوض'?'red':'blue'}">${q.status||'معلق'}</span></td>
+        <td class="td">
+          <button onclick="printQuote('${q.id}')" class="btn-xs btn-gold">طباعة</button>
+          <button onclick="convertToInvoice('${q.id}')" class="btn-xs btn-green" data-manager-only>تحويل لفاتورة</button>
+          <button onclick="deleteQuote('${q.id}')" class="btn-xs btn-red" data-admin-only>حذف</button>
+        </td>
+      </tr>`).join('');
+  }
+  function addQuoteItem() {
+    const desc = v('qi-desc'); const qty = parseFloat(v('qi-qty'))||1; const price = parseFloat(v('qi-price'))||0;
+    if(!desc) return toast('أدخل وصف البند','error');
+    quoteItems.push({ desc, qty, price, total: qty*price }); renderQuoteItems();
+    ['qi-desc','qi-qty','qi-price'].forEach(id=>{ document.getElementById(id).value=''; });
+  }
+  function renderQuoteItems() {
+    const subtotal = quoteItems.reduce((s,i)=>s+i.total,0); const vat = subtotal * 0.15; const total = subtotal + vat;
+    document.getElementById('qi-table').innerHTML = quoteItems.map((item,i)=>`
+      <tr class="tr-row">
+        <td class="td">${item.desc}</td><td class="td text-center">${item.qty}</td><td class="td font-mono">${item.price.toLocaleString('ar-SA')} ﷼</td><td class="td font-mono">${item.total.toLocaleString('ar-SA')} ﷼</td>
+        <td class="td"><button onclick="removeQuoteItem(${i})" class="btn-xs btn-red">✕</button></td>
+      </tr>`).join('');
+    document.getElementById('qi-subtotal').textContent = subtotal.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('qi-vat').textContent = vat.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('qi-total').textContent = total.toLocaleString('ar-SA') + ' ﷼';
+  }
+  function removeQuoteItem(i) { quoteItems.splice(i,1); renderQuoteItems(); }
+  async function saveQuote() {
+    const clientName = v('q-client-name'); const clientPhone= v('q-client-phone'); const notes = v('q-notes');
+    if(!clientName || quoteItems.length===0) return toast('أدخل اسم العميل وبنود العرض','error');
+    const subtotal = quoteItems.reduce((s,i)=>s+i.total,0); const vat = subtotal*0.15; const total = subtotal+vat; const quoteNumber = 'QT-' + Date.now();
+    await addDoc(collection(db,'quotes'),{ quoteNumber, clientName, clientPhone, notes, items: quoteItems, subtotal, vat, total, date: new Date().toLocaleDateString('ar-SA'), status:'معلق', createdAt: serverTimestamp(), createdBy: currentUser.uid });
+    quoteItems=[]; renderQuoteItems(); closeModal('modal-add-quote'); toast('تم حفظ عرض الأسعار ✓'); loadQuotes();
+  }
+  async function convertToInvoice(qid) {
+    const q = quotesData.find(x=>x.id===qid); if(!q) return;
+    await addDoc(collection(db,'invoices'),{ invoiceNumber: 'INV-'+Date.now(), clientName:q.clientName, clientPhone:q.clientPhone, items:q.items, subtotal:q.subtotal, vat:q.vat, amount:q.total, date: new Date().toLocaleDateString('ar-SA'), status:'غير مدفوعة', createdAt: serverTimestamp(), createdBy: currentUser.uid });
+    await updateDoc(doc(db,'quotes',qid),{ status:'مقبول' }); toast('تم التحويل لفاتورة ✓'); loadQuotes();
+  }
+  async function deleteQuote(id) { if(!confirm('حذف عرض الأسعار؟')) return; await deleteDoc(doc(db,'quotes',id)); toast('تم الحذف'); loadQuotes(); }
+
+  // ═══════════════════════════════════════════
+  // MODULE 5 — INVOICES
+  // ═══════════════════════════════════════════
+  let invoicesData = [];
+  async function loadInvoices() {
+    const q = query(collection(db,'invoices'), orderBy('createdAt','desc'));
+    const snap = await getDocs(q); invoicesData = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderInvoices();
+  }
+  function renderInvoices() {
+    document.getElementById('invoices-tbody').innerHTML = invoicesData.map(i=>`
+      <tr class="tr-row">
+        <td class="td font-mono text-gold">${i.invoiceNumber||'—'}</td>
+        <td class="td font-bold">${i.clientName||'—'}</td>
+        <td class="td font-mono">${(i.amount||0).toLocaleString('ar-SA')} ﷼</td>
+        <td class="td"><span class="badge badge-${i.status==='مدفوعة'?'green':'red'}">${i.status||'غير مدفوعة'}</span></td>
+        <td class="td">${i.date||'—'}</td>
+        <td class="td">
+          ${i.status!=='مدفوعة' ? `<button onclick="markInvoicePaid('${i.id}')" class="btn-xs btn-green" data-manager-only>تحصيل</button>`:''}
+          <button onclick="printInvoice('${i.id}')" class="btn-xs btn-gold">طباعة</button>
+          <button onclick="deleteInvoice('${i.id}')" class="btn-xs btn-red" data-admin-only>حذف</button>
+        </td>
+      </tr>`).join('');
+  }
+  async function markInvoicePaid(id) {
+    await updateDoc(doc(db,'invoices',id),{ status:'مدفوعة', paidAt: serverTimestamp() });
+    toast('تم التحصيل وتحديث الخزينة ✓'); loadInvoices();
+  }
+  async function deleteInvoice(id) { if(!confirm('حذف الفاتورة؟')) return; await deleteDoc(doc(db,'invoices',id)); toast('تم الحذف'); loadInvoices(); }
+
+  // ═══════════════════════════════════════════
+  // MODULE 6 — ACCOUNTING
+  // ═══════════════════════════════════════════
+  let txData = [];
+  async function loadAccounting() {
+    const q = query(collection(db,'transactions'), orderBy('date','desc'));
+    const snap = await getDocs(q); txData = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAccounting();
+  }
+  function renderAccounting() {
+    const inc = txData.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const exp = txData.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    document.getElementById('acc-income').textContent = inc.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('acc-expense').textContent = exp.toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('acc-balance').textContent = (inc - exp).toLocaleString('ar-SA') + ' ﷼';
+    document.getElementById('acc-tbody').innerHTML = txData.map(t=>`
+      <tr class="tr-row">
+        <td class="td font-bold">${t.desc}</td>
+        <td class="td ${t.type==='income'?'text-green':'text-red'} font-bold">${t.type==='income'?'إيراد':'مصروف'}</td>
+        <td class="td font-mono">${t.amount.toLocaleString('ar-SA')} ﷼</td>
+        <td class="td font-mono">${t.date}</td>
+        <td class="td"><button onclick="deleteTx('${t.id}')" class="btn-xs btn-red" data-admin-only>حذف</button></td>
+      </tr>`).join('');
+  }
+  async function addTx() {
+    const desc = v('tx-desc'); const amount = parseFloat(v('tx-amount')); const type = v('tx-type'); const date = v('tx-date');
+    if(!desc||!amount||!date) return toast('الحقول مطلوبة','error');
+    await addDoc(collection(db,'transactions'),{ desc, amount, type, date, createdAt: serverTimestamp() });
+    closeModal('modal-add-tx'); toast('تم تسجيل المعاملة المالية ✓'); loadAccounting();
+  }
+  async function deleteTx(id) { if(!confirm('حذف السجل؟')) return; await deleteDoc(doc(db,'transactions',id)); toast('تم الحذف'); loadAccounting(); }
+
+  // ═══════════════════════════════════════════
+  // MODULE 7 — AFFILIATES
+  // ═══════════════════════════════════════════
+  let affData = []; let commData = [];
+  async function loadAffiliates() {
+    const [aSnap, cSnap] = await Promise.all([getDocs(collection(db,'affiliates')), getDocs(collection(db,'commissions'))]);
+    affData = aSnap.docs.map(d=>({id:d.id,...d.data()})); commData = cSnap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAffiliates();
+  }
+  function renderAffiliates() {
+    document.getElementById('aff-tbody').innerHTML = affData.map(a=>{
+      const aComms = commData.filter(c=>c.code === a.code);
+      const totalEarned = aComms.reduce((s,c)=>s+c.amount,0);
+      return `<tr class="tr-row">
+        <td class="td font-bold">${a.name}</td>
+        <td class="td font-mono text-gold font-bold">${a.code}</td>
+        <td class="td font-mono">${a.ratio}%</td>
+        <td class="td font-mono">${aComms.length} عمليات</td>
+        <td class="td font-mono text-green font-bold">${totalEarned.toLocaleString('ar-SA')} ﷼</td>
+        <td class="td"><button onclick="deleteAffiliate('${a.id}')" class="btn-xs btn-red" data-admin-only>حذف</button></td>
+      </tr>`;
+    }).join('');
+  }
+  async function addAffiliate() {
+    const name = v('aff-name'); const code = v('aff-code').toUpperCase().trim(); const ratio = parseFloat(v('aff-ratio'));
+    if(!name||!code||!ratio) return toast('الحقول مطلوبة','error');
+    const exist = affData.find(a=>a.code===code); if(exist) return toast('الكود مستخدم مسبقاً','error');
+    await addDoc(collection(db,'affiliates'),{ name, code, ratio, createdAt:serverTimestamp() });
+    closeModal('modal-add-aff'); toast('تم التسجيل الكود ✓'); loadAffiliates();
+  }
+  async function deleteAffiliate(id) { if(!confirm('حذف المسوق؟')) return; await deleteDoc(doc(db,'affiliates',id)); toast('تم الحذف'); loadAffiliates(); }
+
+  // ═══════════════════════════════════════════
+  // MODULE 8 — USERS
+  // ═══════════════════════════════════════════
+  let usersData = [];
+  async function loadUsers() {
+    if(currentRole!=='admin') return;
+    const snap = await getDocs(collection(db,'users')); usersData = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderUsers();
+  }
+  function renderUsers() {
+    document.getElementById('users-tbody').innerHTML = usersData.map(u=>`
+      <tr class="tr-row">
+        <td class="td font-bold">${u.name||'—'}</td>
+        <td class="td font-mono">${u.email||'—'}</td>
+        <td class="td"><span class="badge badge-${u.role==='admin'?'red':u.role==='manager'?'blue':'green'}">${u.role==='admin'?'مدير نظام':u.role==='manager'?'مدير':'موظف'}</span></td>
+        <td class="td font-mono" style="font-size:10px">${u.id}</td>
+        <td class="td"><button onclick="deleteUserRecord('${u.id}')" class="btn-xs btn-red">حذف الصلاحية</button></td>
+      </tr>`).join('');
+  }
+  async function addUserRecord() {
+    const name = v('new-user-name'); const email = v('new-user-email').trim();
+    const uid  = v('new-user-uid').trim(); const role = v('new-user-role');
+    if(!name||!email||!uid) return toast('جميع الحقول مطلوبة','error');
+    await setDoc(doc(db,'users',uid), { name, email, role, createdAt: serverTimestamp() });
+    closeModal('modal-add-user'); toast('تم منح الصلاحية بنجاح ✓'); loadUsers();
+  }
+  async function deleteUserRecord(uid) { if(!confirm('سحب الصلاحية البرمجية؟')) return; await deleteDoc(doc(db,'users',uid)); toast('تم السحب'); loadUsers(); }
+
+  // ═══════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════
+  function v(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+  function statusClass(s) {
+    if(s==='مغلق ناجح'||s==='مؤكد'||s==='مدفوعة') return 'success';
+    if(s==='قيد المتابعة'||s==='معلق') return 'warning';
+    if(s==='مغلق مستبعد'||s==='ملغي'||s==='غير مدفوعة') return 'danger';
+    return 'info';
+  }
+  function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+  // طرائق الطباعة المستقلة الفورية (عزل الـ DOM)
+  window.printQuote = function(id) {
+    const q = quotesData.find(x=>x.id===id); if(!q) return;
+    const w = window.open('','_blank');
+    w.document.write(`<html><head><title>عرض سعر ${q.quoteNumber}</title><style>body{font-family:sans-serif;direction:rtl;padding:30px;}table{width:100%;border-collapse:collapse;margin:20px 0;}th,td{border:1px solid #ddd;padding:10px;text-align:right;}th{background:#f5f5f5;}</style></head><body>
+      <h2>عرض سعر رقم: ${q.quoteNumber}</h2><p><b>العميل:</b> ${q.clientName} | <b>التاريخ:</b> ${q.date}</p>
+      <table><thead><tr><th>البند</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>
+      ${q.items.map(i=>`<tr><td>${i.desc}</td><td>${i.qty}</td><td>${i.price} ﷼</td><td>${i.total} ﷼</td></tr>`).join('')}
+      </tbody></table><h3 style="text-align:left">الإجمالي الشامل (شامل الضريبة 15%): ${q.total.toLocaleString()} ﷼</h3></body></html>`);
+    w.document.close(); w.print();
+  };
+  window.printInvoice = function(id) {
+    const i = invoicesData.find(x=>x.id===id); if(!i) return;
+    const w = window.open('','_blank');
+    w.document.write(`<html><head><title>فاتورة ${i.invoiceNumber}</title><style>body{font-family:sans-serif;direction:rtl;padding:30px;}table{width:100%;border-collapse:collapse;margin:20px 0;}th,td{border:1px solid #ddd;padding:10px;text-align:right;}th{background:#f5f5f5;}</style></head><body>
+      <h2>فاتورة رقم: ${i.invoiceNumber}</h2><p><b>العميل:</b> ${i.clientName} | <b>التاريخ:</b> ${i.date} | <b>الحالة:</b> ${i.status}</p>
+      <table><thead><tr><th>البند</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>
+      ${i.items ? i.items.map(x=>`<tr><td>${x.desc}</td><td>${x.qty}</td><td>${x.price} ﷼</td><td>${x.total} ﷼</td></tr>`).join('') : `<tr><td>فاتورة خدمات / حجز موعد استشاري</td><td>1</td><td>${i.amount} ﷼</td><td>${i.amount} ﷼</td></tr>`}
+      </tbody></table><h3 style="text-align:left">المبلغ الصافي المسدد: ${i.amount.toLocaleString()} ﷼</h3></body></html>`);
+    w.document.close(); w.print();
+  };
+
+  // ربط الأزرار العمومية بالـ Window Scope لمنع الاختناق البرمجي داخل Module Script
+  window.loadModule = loadModule; window.dashSetPeriod = dashSetPeriod; window.dashExportExcel = dashExportExcel; window.dashImportExcel = dashImportExcel;
+  window.openModal = openModal; window.closeModal = closeModal; window.addLead = addLead; window.updateLeadStatus = updateLeadStatus; window.deleteLead = deleteLead;
+  window.openWhatsApp = openWhatsApp; window.addBooking = addBooking; window.cancelBooking = cancelBooking; window.addQuoteItem = addQuoteItem; window.removeQuoteItem = removeQuoteItem;
+  window.saveQuote = saveQuote; window.convertToInvoice = convertToInvoice; window.deleteQuote = deleteQuote; window.markInvoicePaid = markInvoicePaid; window.deleteInvoice = deleteInvoice;
+  window.addTx = addTx; window.deleteTx = deleteTx; window.addAffiliate = addAffiliate; window.deleteAffiliate = deleteAffiliate; window.addUserRecord = addUserRecord; window.deleteUserRecord = deleteUserRecord; window.login = login; window.logout = logout;
+</script>
+
+<style>
+  :root {
+    --bg-main: #0B0905; --bg-side: #15120A; --bg-card: #1C1911;
+    --border: #2A2415; --text-main: #F4F1EA; --text-muted: #8E846E;
+    --gold: #E2C97A; --gold-hover: #F1DEC3; --green: #27AE60; --red: #C0392B;
+    --font-sys: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Lemonada', var(--font-sys); font-size: 13px; line-height: 1.6; overflow-x: hidden; }
+  .hidden { display: none !important; }
+  .font-mono { font-family: monospace, sans-serif; }
+  .font-bold { font-weight: 700; }
+  .text-gold { color: var(--gold); }
+  .text-green { color: var(--green); }
+  .text-red { color: var(--red); }
+  .text-center { text-align: center; }
+
+  /* Auth UI */
+  .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle at center, #1C1911 0%, #0B0905 100%); }
+  .auth-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 400px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+  .auth-logo { text-align: center; margin-bottom: 25px; }
+  .auth-logo h1 { color: var(--gold); font-size: 20px; font-weight: 700; }
+  .auth-logo p { color: var(--text-muted); font-size: 11px; margin-top: 5px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; color: var(--text-main); font-size: 11px; margin-bottom: 6px; }
+  .form-input, .form-select, .form-textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; color: var(--text-main); font-family: var(--font-sys); font-size: 13px; outline: none; transition: border 0.2s; }
+  .form-input:focus, .form-select:focus { border-color: var(--gold); }
+  .btn-submit { width: 100%; background: var(--gold); color: var(--bg-main); border: none; border-radius: 6px; padding: 12px; font-weight: 700; cursor: pointer; font-family: 'Lemonada'; transition: background 0.2s; }
+  .btn-submit:hover { background: var(--gold-hover); }
+  .auth-error { color: #F87171; font-size: 11px; text-align: center; margin-top: 10px; min-height: 16px; }
+
+  /* Layout */
+  .app-layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: var(--bg-side); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+  .main-content { flex-grow: 1; display: flex; flex-direction: column; background: var(--bg-main); overflow-x: hidden; }
+  .sb-header { padding: 20px; border-bottom: 1px solid var(--border); text-align: center; }
+  .sb-header h2 { color: var(--gold); font-size: 15px; }
+  .sb-user-box { padding: 12px 20px; background: rgba(226,201,122,0.03); border-bottom: 1px solid var(--border); font-size: 11px; }
+  .sb-nav { padding: 15px 10px; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; }
+  .nav-item { display: flex; align-items: center; padding: 10px 15px; border-radius: 6px; color: var(--text-muted); text-decoration: none; cursor: pointer; transition: all 0.2s; font-size: 12px; }
+  .nav-item:hover { background: rgba(226,201,122,0.05); color: var(--text-main); }
+  .nav-active { background: var(--gold) !important; color: var(--bg-main) !important; font-weight: 600; }
+  .sb-footer { padding: 15px; border-top: 1px solid var(--border); }
+  .btn-logout { width: 100%; background: transparent; border: 1px solid var(--border); color: #F87171; padding: 8px; border-radius: 4px; cursor: pointer; font-family: 'Lemonada'; font-size: 11px; }
+  .btn-logout:hover { background: rgba(248,113,113,0.05); }
+
+  /* Top bar */
+  .top-bar { height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 25px; background: var(--bg-side); }
+  .top-title { font-size: 14px; font-weight: 700; color: var(--gold); }
+  .top-actions { display: flex; align-items: center; gap: 10px; }
+
+  /* Panels */
+  .module-panel { padding: 25px; flex-grow: 1; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Dashboard Cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+  .kpi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 15px 20px; position: relative; }
+  .kpi-title { font-size: 10px; color: var(--text-muted); margin-bottom: 5px; }
+  .kpi-val { font-size: 18px; font-weight: 700; color: var(--gold); font-family: monospace; }
+  .kpi-sub { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
+
+  .chart-grid-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+  .chart-grid-bottom { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 25px; }
+  @media(max-width: 900px) { .chart-grid-top, .chart-grid-bottom { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+  .chart-title { font-size: 12px; font-weight: 600; color: var(--text-main); }
+  .chart-container { position: relative; height: 180px; width: 100%; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; font-size: 9px; color: var(--text-muted); }
+
+  /* Tables */
+  .table-wrapper { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; width: 100%; }
+  .table-header-box { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .sys-table { width: 100%; border-collapse: collapse; text-align: right; font-family: var(--font-sys); }
+  .th { background: rgba(226,201,122,0.02); padding: 12px 18px; color: var(--text-muted); font-size: 11px; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .tr-row { border-bottom: 1px solid rgba(42,36,21,0.4); transition: background 0.1s; }
+  .tr-row:hover { background: rgba(226,201,122,0.01); }
+  .td { padding: 12px 18px; font-size: 12px; color: var(--text-main); vertical-align: middle; }
+  .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-size: 12px; }
+
+  /* Buttons & Badges */
+  .btn-gold, .filter-btn { background: var(--gold); color: var(--bg-main); border: none; border-radius: 4px; padding: 6px 14px; font-family: 'Lemonada'; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s; }
+  .btn-gold:hover { background: var(--gold-hover); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 5px 12px; border-radius: 4px; font-family: 'Lemonada'; font-size: 11px; cursor: pointer; }
+  .btn-outline:hover { border-color: var(--gold); }
+  .btn-xs { padding: 3px 8px; border-radius: 3px; border: none; font-family: 'Lemonada'; font-size: 9px; cursor: pointer; color: #FFF; font-weight: 600; }
+  .btn-green { background: var(--green); } .btn-green:hover { background: #219653; }
+  .btn-red { background: var(--red); } .btn-red:hover { background: #A0281C; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; text-align: center; }
+  .badge-success { background: rgba(39,174,96,0.15); color: #2ECC71; }
+  .badge-warning { background: rgba(241,196,15,0.15); color: #F1C40F; }
+  .badge-danger { background: rgba(192,57,43,0.15); color: #E74C3C; }
+  .badge-info { background: rgba(41,128,185,0.15); color: #3498DB; }
+  .sel-mini { background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); font-family: var(--font-sys); font-size: 11px; padding: 2px; border-radius: 4px; outline: none; }
+
+  /* Filter bar */
+  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; background: var(--bg-card); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); align-items: center; }
+  .filter-btn { background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 4px 12px; border-radius: 4px; font-size: 11px; }
+  .filter-btn:hover { color: var(--text-main); }
+  .filter-btn.active { background: rgba(226,201,122,0.1); color: var(--gold); border-color: rgba(226,201,122,0.2); }
+
+  /* Calendar */
+  .cal-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
+  @media(max-width:750px){ .cal-grid { grid-template-columns: 1fr; } }
+  .cal-day { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; min-height: 120px; display: flex; flex-direction: column; overflow: hidden; }
+  .cal-day-header { background: rgba(226,201,122,0.03); border-bottom: 1px solid var(--border); padding: 6px 10px; font-size: 10px; font-bold: 600; color: var(--gold); text-align: center; }
+  .cal-empty { flex-grow: 1; display: flex; align-items: center; justify-content: center; color: rgba(226,201,122,0.15); font-size: 11px; }
+  .cal-event { margin: 4px 6px; padding: 4px 8px; background: rgba(39,174,96,0.1); border-right: 3px solid var(--green); border-radius: 2px; font-size: 9px; color: var(--text-main); font-family: var(--font-sys); line-height: 1.3; }
+
+  /* Modals */
+  .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1000; animation: fadeIn 0.2s ease; }
+  .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 15px 50px rgba(0,0,0,0.7); }
+  .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 13px; font-weight: 700; color: var(--gold); }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: rgba(0,0,0,0.1); }
+  .btn-close-modal { background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; }
+  .btn-close-modal:hover { color: var(--text-main); }
+
+  /* System Toast container */
+  #toast-zone { position: fixed; top: 20px; left: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
+  .toast { padding: 12px 20px; border-radius: 4px; color: #FFF; font-family: var(--font-sys); font-size: 12px; font-weight: 600; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); min-width: 200px; }
+  @keyframes toastIn { from { opacity:0; transform: translateX(-20px); } to { opacity:1; transform: translateX(0); } }
+  .toast-success { background: #27AE60; } .toast-error { background: #C0392B; } .toast-warning { background: #D35400; }
+</style>
+</head>
+<body>
+
+  <div id="toast-zone"></div>
+
+  <div id="login-screen" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <h1>منظومة النواة الرباعية</h1>
+        <p>نظام التخطيط والتحصين الاستراتيجي — البوابة الإدارية</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني للإدارة</label>
+        <input type="email" id="login-email" class="form-input" placeholder="admin@budaiwim.com" style="direction: ltr;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور المشفرة</label>
+        <input type="password" id="login-pass" class="form-input" placeholder="••••••••" style="direction: ltr;">
+      </div>
+      <button id="login-btn" onclick="login()" class="btn-submit">دخول آمن</button>
+      <div id="login-error" class="auth-error"></div>
+    </div>
+  </div>
+
+  <div id="erp-screen" class="app-layout hidden">
+    
+    <div class="sidebar">
+      <div class="sb-header">
+        <h2>النواة الرباعية</h2>
+      </div>
+      <div class="sb-user-box">
+        <div>مرحباً: <span id="user-name-display" class="font-bold text-gold">—</span></div>
+        <div style="color: var(--text-muted); margin-top:2px;">الصفة: <span id="user-role-display">—</span></div>
+      </div>
+      <div class="sb-nav">
+        <div class="nav-item nav-active" data-module="dashboard" onclick="loadModule('dashboard')">📊 لوحة المؤشرات</div>
+        <div class="nav-item" data-module="crm" onclick="loadModule('crm')">👥 إدارة العملاء (CRM)</div>
+        <div class="nav-item" data-module="bookings" onclick="loadModule('bookings')">📅 الحجوزات والتقويم</div>
+        <div class="nav-item" data-module="quotes" onclick="loadModule('quotes')">📜 عروض الأسعار</div>
+        <div class="nav-item" data-module="invoices" onclick="loadModule('invoices')">💳 الفواتير والمقبوضات</div>
+        <div class="nav-item" data-module="accounting" onclick="loadModule('accounting')" data-manager-only>💰 الخزينة والمالية</div>
+        <div class="nav-item" data-module="affiliates" onclick="loadModule('affiliates')">🔗 التسويق بالعمولة</div>
+        <div class="nav-item" data-module="users" onclick="loadModule('users')" data-admin-only>⚙️ صلاحيات النظام</div>
+      </div>
+      <div class="sb-footer">
+        <button onclick="logout()" class="btn-logout">تسجيل الخروج الآمن</button>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="top-bar">
+        <div class="top-title">مجموعة عبد الاله بدوي للاستشارات الإدارية</div>
+        <div class="top-actions" id="dash-last-update" style="font-size:10px; color:var(--text-muted);"></div>
+      </div>
+
+      <div id="module-dashboard" class="module-panel">
+        <div class="filter-row" id="dash-period-filters">
+          <span style="font-size:11px; color:var(--text-muted); margin-left:10px;">النطاق الزمني للمؤشرات:</span>
+          <button class="filter-btn active" onclick="dashSetPeriod('all', this)">كل البيانات التاريخية</button>
+          <button class="filter-btn" onclick="dashSetPeriod('year', this)">العام الحالي</button>
+          <button class="filter-btn" onclick="dashSetPeriod('q1', this)">الربع الأول</button>
+          <button class="filter-btn" onclick="dashSetPeriod('q2', this)">الربع الثاني</button>
+          <button class="filter-btn" onclick="dashSetPeriod('q3', this)">الربع الثالث</button>
+          <button class="filter-btn" onclick="dashSetPeriod('q4', this)">الربع الرابع</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-title">إجمالي العملاء المستقطبين</div>
+            <div class="kpi-val" id="kpi-leads">0</div>
+            <div class="kpi-sub" id="kpi-leads-sub">—</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">مغلق ناجح (صفقات مبرمة)</div>
+            <div class="kpi-val text-green" id="kpi-won">0</div>
+            <div class="kpi-sub">عملاء تم تحويلهم لتعاقدات فعالة</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">معدل تحويل المبيعات (CR)</div>
+            <div class="kpi-val" id="kpi-conv">0%</div>
+            <div class="kpi-sub" id="kpi-conv-sub">—</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">الإيرادات والتدفقات النقدية</div>
+            <div class="kpi-val text-gold" id="kpi-revenue">0 ﷼</div>
+            <div class="kpi-sub" id="kpi-revenue-sub">—</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">حجوزات الاستشارات المؤكدة</div>
+            <div class="kpi-val" id="kpi-bookings">0</div>
+            <div class="kpi-sub">جلسات مجدولة قيد التنفيذ</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">مستحقات عمولات التسويق</div>
+            <div class="kpi-val" id="kpi-comms">0 ﷼</div>
+            <div class="kpi-sub">إجمالي العمولات المسجلة للشركاء</div>
+          </div>
+        </div>
+
+        <div class="chart-grid-top">
+          <div class="chart-card">
+            <div class="chart-header"><div class="chart-title">مراحل تدفق ومتابعة العملاء Pipeline</div></div>
+            <div class="chart-container"><canvas id="ch-stage"></canvas></div>
+            <div class="chart-legend" id="ch-stage-legend"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><div class="chart-title">قنوات ومصادر استقطاب العملاء Lead Sources</div></div>
+            <div class="chart-container"><canvas id="ch-source"></canvas></div>
+            <div class="chart-legend" id="ch-source-legend"></div>
+          </div>
+        </div>
+
+        <div class="chart-grid-bottom">
+          <div class="chart-card">
+            <div class="chart-header"><div class="chart-title">المنحنى النمو الزمني التراكمي والشهري</div></div>
+            <div class="chart-container"><canvas id="ch-trend"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><div class="chart-title">معدل التحويل الربع سنوي الفعلي</div></div>
+            <div class="chart-container"><canvas id="ch-conversion"></canvas></div>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <div class="table-header-box">
+            <div style="font-size:12px; font-weight:700; color:var(--gold)">آخر العمليات والطلبات الواردة للمنظومة</div>
+            <div style="display:flex; gap:8px;">
+              <label class="btn-outline" style="cursor:pointer; display:inline-flex; align-items:center;">
+                📥 استيراد من Excel <input type="file" accept=".xlsx, .xls" onchange="dashImportExcel(this)" style="display:none;">
+              </label>
+              <button onclick="dashExportExcel()" class="btn-gold">📤 تصدير تقرير معتمد Excel</button>
+            </div>
+          </div>
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">الاسم</th>
+                <th class="th">الجوال</th>
+                <th class="th">الاهتمام / الخدمة</th>
+                <th class="th">حالة العميل</th>
+                <th class="th">المصدر</th>
+                <th class="th">تاريخ التسجيل</th>
+              </tr>
+            </thead>
+            <tbody id="recent-leads-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="module-crm" class="module-panel hidden">
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="renderLeads('')">الكل</button>
+          <button class="filter-btn" onclick="renderLeads('جديد')">جديد</button>
+          <button class="filter-btn" onclick="renderLeads('قيد المتابعة')">قيد المتابعة</button>
+          <button class="filter-btn" onclick="renderLeads('مغلق ناجح')">مغلق ناجح</button>
+          <button class="filter-btn" onclick="renderLeads('مغلق مستبعد')">مغلق مستبعد</button>
+          <button onclick="openModal('modal-add-lead')" class="btn-gold" style="margin-right:auto;">+ إضافة عميل يدوياً</button>
+        </div>
+        <div class="table-wrapper">
+          <div class="table-header-box"><div style="font-weight:700; color:var(--gold)">قاعدة البيانات النشطة للعملاء المستهدفين <span id="crm-count" style="font-family:monospace; color:white; margin-right:5px"></span></div></div>
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">الاسم</th><th class="th">الجوال</th><th class="th">الخدمة المستهدفة</th><th class="th">الحالة الحالية</th><th class="th">المصدر</th><th class="th">تحديث المرحلة</th><th class="th">إجراءات المتابعة</th>
+              </tr>
+            </thead>
+            <tbody id="crm-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="module-bookings" class="module-panel hidden">
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="renderBookings('')">الكل</button>
+          <button class="filter-btn" onclick="renderBookings('مؤكد')">مؤكد</button>
+          <button class="filter-btn" onclick="renderBookings('ملغي')">ملغي</button>
+          <button onclick="openModal('modal-add-booking')" class="btn-gold" style="margin-right:auto;">+ حجز موعد جديد</button>
+        </div>
+        <div style="margin-bottom:25px;">
+          <div style="font-weight:600; color:var(--text-main); margin-bottom:10px;">التقويم الأسبوعي المتزامن للعمليات الاستشارية (الأحد - الخميس)</div>
+          <div class="cal-grid" id="calendar-grid"></div>
+        </div>
+        <div class="table-wrapper">
+          <div class="table-header-box"><div style="font-weight:700; color:var(--gold)">جدول فحص وتتبع الحجوزات الواردة</div></div>
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">العميل</th><th class="th">الجوال</th><th class="th">نوع الجلسة الاستشارية</th><th class="th">الموعد والتوقيت</th><th class="th">قيمة الجلسة</th><th class="th">الحالة</th><th class="th">خيارات التحكم</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="module-quotes" class="module-panel hidden">
+        <div class="filter-row">
+          <div style="font-weight:600; color:var(--text-main);">إدارة وحوكمة عروض الأسعار الصادرة للشركات والجهات</div>
+          <button onclick="openModal('modal-add-quote')" class="btn-gold" style="margin-right:auto;">+ إنشاء عرض أسعار رسمي</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">رقم العرض</th><th class="th">العميل / الجهة</th><th class="th">التاريخ</th><th class="th">المبلغ الإجمالي الشامل</th><th class="th">الحالة الإدارية</th><th class="th">الخيارات</th>
+              </tr>
+            </thead>
+            <tbody id="quotes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="module-invoices" class="module-panel hidden">
+        <div class="table-wrapper">
+          <div class="table-header-box"><div style="font-weight:700; color:var(--gold)">سجلات المحاسبة والفواتير المالية القانونية</div></div>
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">رقم الفاتورة</th><th class="th">العميل / الجهة المستفيدة</th><th class="th">القيمة المالية الشاملة</th><th class="th">حالة السداد</th><th class="th">تاريخ الإصدار</th><th class="th">إجراءات نظام المحاسبة</th>
+              </tr>
+            </thead>
+            <tbody id="invoices-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="module-accounting" class="module-panel hidden">
+        <div class="kpi-grid">
+          <div class="kpi-card" style="border-right: 4px solid var(--green);"><div class="kpi-title">إجمالي التدفقات الواردة الإيرادات</div><div class="kpi-val text-green" id="acc-income">0 ﷼</div></div>
+          <div class="kpi-card" style="border-right: 4px solid var(--red);"><div class="kpi-title">إجمالي المصروفات والتشغيل</div><div class="kpi-val text-red" id="acc-expense">0 ﷼</div></div>
+          <div class="kpi-card" style="border-right: 4px solid var(--gold);"><div class="kpi-title">صافي الأرباح القابلة للتوزيع</div><div class="kpi-val text-gold" id="acc-balance">0 ﷼</div></div>
+        </div>
+        <div class="filter-row">
+          <div style="font-weight:600; color:var(--text-main);">القيود المالية اليومية (سجل الخزينة)</div>
+          <button onclick="openModal('modal-add-tx')" class="btn-gold" style="margin-right:auto;">+ تسوية / تقييد معاملة مالية</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">بيان المعاملة / الوصف القانوني</th><th class="th">التصنيف المحاسبي</th><th class="th">المبلغ</th><th class="th">التاريخ والتقييد</th><th class="th">خيارات الإدارة</th>
+              </tr>
+            </thead>
+            <tbody id="acc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="module-affiliates" class="module-panel hidden">
+        <div class="filter-row">
+          <div style="font-weight:600; color:var(--text-main);">برنامج الشركاء الاستراتيجيين والتسويق بالعمولة المنظم</div>
+          <button onclick="openModal('modal-add-aff')" class="btn-gold" style="margin-right:auto;">+ تفعيل كود مسوق جديد</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">اسم الشريك / المسوق</th><th class="th">الكود التعريفي</th><th class="th">نسبة العموله المئوية</th><th class="th">عدد المبيعات الناجحة</th><th class="th">إجمالي العمولات المستحقة والصافية</th><th class="th">التحكم</th>
+              </tr>
+            </thead>
+            <tbody id="aff-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="module-users" class="module-panel hidden">
+        <div class="filter-row">
+          <div style="font-weight:600; color:var(--text-main);">صلاحيات الإدارة والوصول للمنظومة العلوية للـ ERP</div>
+          <button onclick="openModal('modal-add-user')" class="btn-gold" style="margin-right:auto;">+ منح صلاحية وصول لموظف</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="sys-table">
+            <thead>
+              <tr>
+                <th class="th">اسم الموظف / المهندس</th><th class="th">البريد المعتمد للوصول</th><th class="th">مستوى الصلاحية الممنوحة</th><th class="th">المعرف الفيدرالي UID</th><th class="th">التحكم بالحساب</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="modal-add-lead" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header"><div class="modal-title">إضافة عميل مستهدف جديد للـ CRM</div><button onclick="closeModal('modal-add-lead')" class="btn-close-modal">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">اسم العميل الثلاثي *</label><input id="lead-name" class="form-input" placeholder="عبدالله الشمري"></div>
+        <div class="form-group"><label class="form-label">رقم الجوال الفعال (مع كود الدولة) *</label><input id="lead-phone" class="form-input" placeholder="9665xxxxxxxx" style="direction: ltr;"></div>
+        <div class="form-group"><label class="form-label">الخدمة المطلوبة / المشروع المهتم به</label><input id="lead-project" class="form-input" placeholder="بناء نظام ERP / استشارة إدارية"></div>
+        <div class="form-group"><label class="form-label">مصدر استقطاب العميل</label>
+          <select id="lead-source" class="form-select">
+            <option value="تويتر (X)">تويتر (X)</option><option value="لينكد إن LinkedIn">لينكد إن LinkedIn</option><option value="توصية مباشرة">توصية مباشرة</option><option value="الموقع الإلكتروني">الموقع الإلكتروني</option><option value="أخرى">أخرى</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer"><button onclick="closeModal('modal-add-lead')" class="btn-outline">إلغاء</button><button onclick="addLead()" class="btn-gold">حفظ وثيقة العميل</button></div>
+    </div>
+  </div>
+
+  <div id="modal-add-booking" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header"><div class="modal-title">تسجيل حجز استشاري وتأكيده فورياً</div><button onclick="closeModal('modal-add-booking')" class="btn-close-modal">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">اسم العميل *</label><input id="book-name" class="form-input" placeholder="سعود العتيبي"></div>
+        <div class="form-group"><label class="form-label">رقم الجوال للاتصال والمزامنة *</label><input id="book-phone" class="form-input" placeholder="9665xxxxxxxx" style="direction: ltr;"></div>
+        <div class="form-group"><label class="form-label">حزمة الجلسة الاستشارية المستهدفة</label>
+          <select id="book-session" class="form-select">
+            <option value="0">تشخيص أولي مجاني — 15 دقيقة (0 ﷼)</option><option value="1">استشارة متخصصة — 30 دقيقة (299 ﷼)</option><option value="2">استشارة عميقة ومكثفة — 60 دقيقة (499 ﷼)</option><option value="3">جلسة النواة الرباعية الاستراتيجية — 90 دقيقة (699 ﷼)</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">التاريخ المقيد بالتقويم *</label><input id="book-date" type="date" class="form-input" style="direction: rtl;"></div>
+        <div class="form-group"><label class="form-label">التوقيت (ساعة الجلسة) *</label>
+          <select id="book-time" class="form-select">
+            <option value="04:00 م">04:00 م</option><option value="05:00 م">05:00 م</option><option value="06:00 م">06:00 م</option><option value="07:00 م">07:00 م</option><option value="08:00 م">08:00 م</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer"><button onclick="closeModal('modal-add-booking')" class="btn-outline">إلغاء</button><button onclick="addBooking()" class="btn-gold">ربط وتأكيد الحجز</button></div>
+    </div>
+  </div>
+
+  <div id="modal-add-quote" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header"><div class="modal-title">بناء صياغة مخصصة لعرض أسعار رسمي للشركات</div><button onclick="closeModal('modal-add-quote')" class="btn-close-modal">✕</button></div>
+      <div class="modal-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+          <div><label class="form-label">الشركة / العميل المستفيد *</label><input id="q-client-name" class="form-input" placeholder="شركة الفهد التجارية"></div>
+          <div><label class="form-label">رقم الجوال أو وسيلة الاتصال</label><input id="q-client-phone" class="form-input" placeholder="9665xxxxxxxx"></div>
+        </div>
+        <div style="background:rgba(226,201,122,0.02); border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:15px;">
+          <div style="font-size:11px; font-weight:600; color:var(--gold); margin-bottom:10px;">إضافة بنود العرض المالية والخدمية</div>
+          <div style="display:grid; grid-template-columns:2.5fr 1fr 1.2fr 0.5fr; gap:6px; align-items:center;">
+            <input id="qi-desc" class="form-input" placeholder="وصف الخدمة الاستشارية / البند التخطيطي">
+            <input id="qi-qty" type="number" class="form-input" placeholder="الكمية" value="1" style="text-align:center;">
+            <input id="qi-price" type="number" class="form-input" placeholder="سعر الوحدة ﷼" style="direction:ltr;">
+            <button onclick="addQuoteItem()" class="btn-gold" style="padding:10px; justify-content:center;">+</button>
+          </div>
+          <table class="sys-table" style="margin-top:10px; font-size:11px;">
+            <thead><tr><th class="th" style="padding:6px;">البند</th><th class="th style="padding:6px; text-align:center;">الكمية</th><th class="th" style="padding:6px;">السعر</th><th class="th" style="padding:6px;">الإجمالي</th><th class="th" style="padding:6px;"></th></tr></thead>
+            <tbody id="qi-table"></tbody>
+          </table>
+          <div style="margin-top:10px; border-top:1px dashed var(--border); padding-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+            <div>الصافي قبل الضريبة: <span id="qi-subtotal" class="font-mono">0 ﷼</span></div>
+            <div>ضريبة القيمة المضافة الإلزامية (15%): <span id="qi-vat" class="font-mono">0 ﷼</span></div>
+            <div style="font-weight:700; color:var(--gold);">الإجمالي الشامل والنهائي: <span id="qi-total" class="font-mono">0 ﷼</span></div>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">شروط وأحكام العرض / ملاحظات إضافية</label><textarea id="q-notes" class="form-textarea" rows="2" placeholder="صلاحية العرض 15 يوماً من تاريخ الإصدار..."></textarea></div>
+      </div>
+      <div class="modal-footer"><button onclick="closeModal('modal-add-quote')" class="btn-outline">إلغاء وإسقاط المسودة</button><button onclick="saveQuote()" class="btn-gold">اعتماد وحفظ العرض القانوني</button></div>
+    </div>
+  </div>
+
+  <div id="modal-add-tx" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header"><div class="modal-title">تقييد قيد مالي جديد في الخزينة المركزية للمجموعة</div><button onclick="closeModal('modal-add-tx')" class="btn-close-modal">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">وصف السند / البيان المالي للعملية *</label><input id="tx-desc" class="form-input" placeholder="سداد فاتورة تسويق رقم ... / تجديد اشتراكات سيرفرات"></div>
+        <div class="form-group"><label class="form-label">القيمة النقدية الصافية (بالريال السعودي) *</label><input id="tx-amount" type="number" class="form-input" placeholder="0.00" style="direction: ltr;"></div>
+        <div class="form-group"><label class="form-label">التوجيه المحاسبي (التصنيف) *</label>
+          <select id="tx-type" class="form-select"><option value="income">إيراد مالي فعال (داخل للشركة)</option><option value="expense">مصروف تشغيلي / رواتب وعمولات (خارج من الشركة)</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">تاريخ العملية والتقييد المحاسبي *</label><input id="tx-date" type="date" class="form-input" style="direction: rtl;"></div>
+      </div>
+      <div class="modal-footer"><button onclick="closeModal('modal-add-tx')" class="btn-outline">إلغاء</button><button onclick="addTx()" class="btn-gold">ترحيل القيد للخزينة</button></div>
+    </div>
+  </div>
+
+  <div id="modal-add-aff" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header"><div class="modal-title">تفعيل قنوات التسويق وتوليد كود مسوق خارجي</div><button onclick="closeModal('modal-add-aff')" class="btn-close-modal">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">اسم المسوق أو الجهة الشريكة *</label><input id="aff-name" class="form-input" placeholder="عبدالعزيز الفايز"></div>
+        <div class="form-group"><label class="form-label">كود الخصم / التتبع المخصص (باللغة الإنجليزية بدون مسافات) *</label><input id="aff-code" class="form-input" placeholder="BADAWI10" style="direction: ltr;"></div>
+        <div class="form-group"><label class="form-label">النسبة المئوية المخصصة للمسوق من صافي الأرباح *</label><input id="aff-ratio" type="number" class="form-input" placeholder="15" value="10" style="direction: ltr;"></div>
+      </div>
+      <div class="modal-footer"><button onclick="closeModal('modal-add-aff')" class="btn-outline">إلغاء</button><button onclick="addAffiliate()" class="btn-gold">اعتماد وتوليد الرابط التتبعي</button></div>
+    </div>
+  </div>
+
+  <div id="modal-add-user" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header"><div class="modal-title">إسناد ومنح صلاحيات أمنية للكوادر والموظفين</div><button onclick="closeModal('modal-add-user')" class="btn-close-modal">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">اسم المستخدم *</label><input id="new-user-name" class="form-input" placeholder="اسم المستخدم"></div>
+        <div class="form-group"><label class="form-label">البريد الإلكتروني *</label><input id="new-user-email" class="form-input" type="email" placeholder="email@example.com"></div>
+        <div class="form-group"><label class="form-label">UID من Firebase Auth *</label><input id="new-user-uid" class="form-input" placeholder="انسخ الـ UID من Authentication → Users"></div>
+        <p style="font-size:9px;color:#F59E0B;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px;margin-bottom:8px">
+          ⚠️ الخطوة الصحيحة: أنشئ المستخدم أولاً في Firebase Console → Authentication → Add User، ثم انسخ الـ UID وضعه هنا. هذا يضمن تطابق الصلاحيات مع هوية المستخدم.
+        </p>
+        <div class="form-group"><label class="form-label">الدور</label>
+          <select id="new-user-role" class="form-select">
+            <option value="staff">موظف</option>
+            <option value="manager">مدير</option>
+            <option value="admin">مدير النظام</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer"><button onclick="closeModal('modal-add-user')" class="btn-outline">إلغاء</button><button onclick="addUserRecord()" class="btn-gold">إسناد الصلاحية الأمنية</button></div>
+    </div>
+  </div>
+
+</body>
+</html>
