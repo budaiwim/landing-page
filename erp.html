@@ -511,11 +511,86 @@
     loadCRM();
   }
 
+  // ── نماذج رسائل واتساب للعملاء (CRM) ──
+  let _waTarget = { phone:'', name:'', project:'' };
+
   function openWhatsApp(phone, name, project) {
-    const msg = encodeURIComponent(
-      `مرحباً ${name}،\nمعك المستشار عبدالاله بدوي بخصوص: ${project}\nاحجز موعدك: https://calendar.app.google/9Y2F5hCLp6cm4Qmx6`
-    );
-    window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
+    _waTarget = { phone, name, project };
+    document.getElementById('wa-client-name').textContent = name;
+    document.getElementById('wa-tmpl-select').value = 'follow';
+    _waPreview();
+    document.getElementById('modal-wa-message').classList.remove('hidden');
+  }
+
+  function _waPreview() {
+    const tmpl = document.getElementById('wa-tmpl-select').value;
+    const extra = document.getElementById('wa-extra-note').value.trim();
+    const { name, project } = _waTarget;
+    const link = 'https://calendar.app.google/9Y2F5hCLp6cm4Qmx6';
+    let msg = '';
+
+    if (tmpl === 'follow') {
+      msg = `مرحباً ${name}، يسعدنا تواصلكم معنا.
+
+بخصوص: ${project}
+
+${extra ? extra + '\n\n' : ''}نتطلع لخدمتكم — لأي استفسار نحن هنا.
+
+احجز موعدك مباشرة: 🔗 ${link}
+
+المستشار عبدالاله بدوي`;
+    } else if (tmpl === 'reminder') {
+      msg = `مرحباً ${name}،
+
+نتواصل معكم تذكيراً بموعدكم القادم بخصوص: ${project}
+
+${extra ? '📌 ' + extra + '\n\n' : ''}يرجى التأكيد أو إعادة الجدولة قبل 24 ساعة.
+
+للتواصل المباشر أو إعادة الحجز: 🔗 ${link}
+
+المستشار عبدالاله بدوي`;
+    } else if (tmpl === 'proposal') {
+      msg = `مرحباً ${name}،
+
+نشكركم على ثقتكم بنا بخصوص: ${project}
+
+يسعدنا إفادتكم بأن عرضنا المخصص لكم جاهز للمراجعة.
+
+${extra ? '📋 ' + extra + '\n\n' : ''}للمتابعة أو تحديد موعد مناقشة العرض: 🔗 ${link}
+
+المستشار عبدالاله بدوي`;
+    } else if (tmpl === 'welcome') {
+      msg = `مرحباً ${name}،
+
+أهلاً وسهلاً بكم في منظومة النواة الرباعية.
+
+يسعدنا انضمامكم إلينا بخصوص: ${project}
+
+${extra ? extra + '\n\n' : ''}سنكون على تواصل قريباً لتحديد الخطوات التالية. في أي وقت تحتاجون فيه لأي مساعدة: 🔗 ${link}
+
+المستشار عبدالاله بدوي`;
+    } else if (tmpl === 'closing') {
+      msg = `مرحباً ${name}،
+
+نشكركم على تعاملكم معنا بخصوص: ${project}
+
+${extra ? extra + '\n\n' : ''}يسعدنا دائماً خدمتكم، ونأمل أن تكونوا قد حققتم الأهداف المرجوة.
+
+للتواصل في أي وقت: 🔗 ${link}
+
+المستشار عبدالاله بدوي`;
+    }
+
+    document.getElementById('wa-preview-text').textContent = msg;
+    return msg;
+  }
+
+  function _waSend() {
+    const phone = _waTarget.phone;
+    if (!phone) return;
+    const msg = _waPreview();
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    document.getElementById('modal-wa-message').classList.add('hidden');
   }
 
   // ═══════════════════════════════════════════
@@ -537,6 +612,105 @@
     renderCalendar();
   }
 
+  // ─── نموذج الإلغاء النشط ───
+  let _cancelBookingId = null;
+
+  function openCancelModal(id) {
+    _cancelBookingId = id;
+    document.getElementById('modal-cancel-booking').classList.remove('hidden');
+  }
+
+  async function confirmCancelBooking() {
+    if (!_cancelBookingId) return;
+    const reason = document.getElementById('cancel-reason').value;
+    const customNote = document.getElementById('cancel-note').value.trim();
+    const booking = bookingsData.find(b => b.id === _cancelBookingId);
+    if (!booking) return;
+    const bookingRef = 'BK-' + _cancelBookingId.slice(-6).toUpperCase();
+    await updateDoc(doc(db,'bookings',_cancelBookingId),{
+      status:'ملغي', cancelReason: reason, cancelNote: customNote,
+      cancelledAt: serverTimestamp(), cancelledBy: currentUser.uid
+    });
+    closeModal('modal-cancel-booking');
+    toast('تم إلغاء الحجز ✓');
+    // عرض خيار إرسال واتساب
+    const sendNow = confirm(`تم الإلغاء بنجاح.\nهل تريد إرسال رسالة واتساب للعميل "${booking.clientName}" الآن؟`);
+    if (sendNow) sendCancelWhatsAppDirect(booking, bookingRef, reason, customNote);
+    await loadBookings();
+    _cancelBookingId = null;
+  }
+
+  function sendCancelWhatsApp(id) {
+    const booking = bookingsData.find(b => b.id === id);
+    if (!booking) return;
+    const bookingRef = 'BK-' + id.slice(-6).toUpperCase();
+    const reason = booking.cancelReason || 'بناءً على طلب العميل';
+    const note = booking.cancelNote || '';
+    sendCancelWhatsAppDirect(booking, bookingRef, reason, note);
+  }
+
+  function sendCancelWhatsAppDirect(booking, bookingRef, reason, note) {
+    const name = booking.clientName || 'العميل الكريم';
+    const phone = booking.clientPhone || '';
+    const service = booking.sessionType || '—';
+    const dateTime = (booking.bookingDate || '') + ' ' + (booking.bookingTime || '');
+    const rebookLink = 'https://calendar.app.google/9Y2F5hCLp6cm4Qmx6';
+    let msg = '';
+
+    if (reason === 'بناءً على طلب العميل') {
+      msg = `مرحباً ${name}، يسعدنا تواصلكم معنا.
+
+بناءً على طلبكم، نؤكد لكم أنه تم إلغاء الحجز بنجاح. أدناه تفاصيل الحجز الملغي:
+
+• رقم الحجز: ${bookingRef}
+• الخدمة / الموعد: ${service} — ${dateTime}
+• سبب الإلغاء: بناءً على رغبة العميل${note ? '\n• ملاحظة: ' + note : ''}
+
+وقتكم يهمنا ونحن بانتظاركم دائماً؛ إذا استجدت أي ظروف وترغبون في اختيار موعد آخر يناسبكم، يمكنكم إعادة الحجز مباشرة وبخطوة واحدة عبر الرابط التالي:
+🔗 ${rebookLink}
+
+يومكم سعيد، ونفخر بخدمتكم في أي وقت.
+المستشار عبدالاله بدوي`;
+
+    } else if (reason === 'عدم السداد أو اكتمال البيانات') {
+      msg = `مرحباً ${name}، نأمل أن تكونوا بخير وعافية.
+
+يؤسفنا إبلاغكم بأنه تم إلغاء الحجز تلقائياً نظراً لـ ${note || 'عدم استكمال عملية السداد في الوقت المحدد'}.
+
+تفاصيل الحجز الملغي:
+
+• رقم الحجز: ${bookingRef}
+• الخدمة / الموعد: ${service} — ${dateTime}
+
+ولأننا نحرص على تواجدكم معنا، لا تزال الفرصة متاحة لتأمين مقعدكم/موعدكم مجدداً. يمكنكم إعادة الحجز وإتمام العملية مباشرة عبر الرابط التالي:
+🔗 ${rebookLink}
+
+إذا واجهتكم أي مشكلة أثناء السداد، يرجى الرد على هذه الرسالة وسيقوم الدعم الفني بمساعدتكم فوراً.
+المستشار عبدالاله بدوي`;
+
+    } else {
+      // ظروف طارئة من طرف المنشأة
+      const causeText = note || 'ظرف طارئ وخارج عن إرادتنا';
+      msg = `مرحباً ${name}، نعتذر منكم بشدة.
+
+نظراً لـ ${causeText}، يؤسفنا جداً إبلاغكم بإلغاء الحجز التالي:
+
+• رقم الحجز: ${bookingRef}
+• الموعد الملغي: ${service} — ${dateTime}
+
+نكرر اعتذارنا عن أي إزعاج قد يسببه لكم هذا التغيير الطارئ. وتقديراً لوقتكم وثقتكم بنا، نود منحكم الأولوية في اختيار الموعد الجديد المناسب لكم.
+
+يرجى الضغط على الرابط أدناه لإعادة جدولة الحجز بكل سهولة:
+🔗 ${rebookLink}
+
+شكراً لتفهمكم وسعداء جداً بخدمتكم.
+المستشار عبدالاله بدوي`;
+    }
+
+    if (!phone) return toast('رقم الجوال غير متوفر', 'error');
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+  }
+
   function renderBookings(filter='') {
     const data = filter ? bookingsData.filter(b=>b.status===filter) : bookingsData;
     document.getElementById('bookings-tbody').innerHTML = data.map(b=>`
@@ -547,9 +721,10 @@
         <td class="td font-mono">${b.bookingDate||'—'} ${b.bookingTime||''}</td>
         <td class="td">${b.price ? b.price.toLocaleString('ar-SA')+' ﷼' : 'مجاني'}</td>
         <td class="td"><span class="badge badge-${statusClass(b.status)}">${b.status||'مؤكد'}</span></td>
-        <td class="td">
-          <button onclick="cancelBooking('${b.id}')" class="btn-xs btn-red" data-manager-only>إلغاء</button>
-          <button onclick="openWhatsApp('${b.clientPhone}','${b.clientName}','')" class="btn-xs btn-green">واتساب</button>
+        <td class="td" style="white-space:nowrap">
+          ${b.status!=='ملغي'?`<button onclick="openCancelModal('${b.id}')" class="btn-xs btn-red" data-manager-only>إلغاء</button>`:''}
+          ${b.status==='ملغي'?`<button onclick="sendCancelWhatsApp('${b.id}')" class="btn-xs btn-gold">📲 إشعار الإلغاء</button>`:''}
+          <button onclick="openWhatsApp('${b.clientPhone}','${b.clientName}','${(b.sessionType||'').replace(/'/g,"")}')" class="btn-xs btn-green">واتساب</button>
         </td>
       </tr>`).join('');
   }
@@ -585,11 +760,22 @@
     loadBookings();
   }
 
-  async function cancelBooking(id) {
-    if(!confirm('إلغاء الحجز؟')) return;
-    await updateDoc(doc(db,'bookings',id),{ status:'ملغي', updatedAt: serverTimestamp() });
-    toast('تم الإلغاء');
-    loadBookings();
+  // ─── تصفير قاعدة البيانات (admin only) ───
+  async function resetDatabase() {
+    if(currentRole !== 'admin') return toast('هذه العملية للمدير فقط','error');
+    const confirm1 = confirm('⚠️ تحذير: سيتم حذف جميع بيانات العملاء والحجوزات والمسوقين والمعاملات المالية والفواتير والعمولات نهائياً.\nهل أنت متأكد؟');
+    if(!confirm1) return;
+    const confirm2 = confirm('⚠️ تأكيد نهائي: لا يمكن التراجع عن هذه العملية. المتابعة؟');
+    if(!confirm2) return;
+    toast('جاري التصفير...','error');
+    const cols = ['leads','bookings','affiliates','commissions','transactions','invoices','quotes'];
+    for(const col of cols) {
+      const snap = await getDocs(collection(db, col));
+      const deletes = snap.docs.map(d => deleteDoc(doc(db, col, d.id)));
+      await Promise.all(deletes);
+    }
+    toast('✓ تم تصفير قاعدة البيانات بالكامل');
+    loadDashboard();
   }
 
   function renderCalendar() {
@@ -1089,6 +1275,8 @@
     createUser, updateUserRole,
     openModal, closeModal,
     dashSetPeriod, dashExportExcel, dashImportExcel,
+    openCancelModal, confirmCancelBooking, sendCancelWhatsApp, resetDatabase,
+    _waPreview, _waSend,
     handleEnter: (e,fn)=>{ if(e.key==='Enter') window[fn](); }
   });
 </script>
@@ -1374,6 +1562,9 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
     <div class="nav-section" data-admin-only>الإدارة</div>
     <div class="nav-item" data-module="users" onclick="loadModule('users')" data-admin-only>
       <span class="icon">⚙️</span><span class="nav-label">المستخدمون والصلاحيات</span>
+    </div>
+    <div class="nav-item" onclick="resetDatabase()" data-admin-only style="color:#C0392B;margin-top:4px">
+      <span class="icon">🗑</span><span class="nav-label">تصفير قاعدة البيانات</span>
     </div>
 
     <div class="sidebar-user">
@@ -1743,6 +1934,167 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════
+     مودال رسائل واتساب — عملاء CRM
+══════════════════════════════════════ -->
+<div id="modal-wa-message" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title">📲 إرسال رسالة واتساب — <span id="wa-client-name" style="color:var(--gold)"></span></div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="form-label">نموذج الرسالة</label>
+      <select id="wa-tmpl-select" class="form-select" onchange="_waPreview()">
+        <option value="follow">📌 متابعة عامة</option>
+        <option value="reminder">⏰ تذكير بالموعد</option>
+        <option value="proposal">📋 إرسال عرض</option>
+        <option value="welcome">🎉 ترحيب بعميل جديد</option>
+        <option value="closing">✅ إغلاق ناجح / شكر</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="form-label">إضافة نص مخصص (اختياري — يُدرج وسط الرسالة)</label>
+      <textarea id="wa-extra-note" class="form-textarea" rows="2"
+        placeholder="مثال: تفاصيل الموعد / ملاحظة خاصة / رابط إضافي..."
+        oninput="_waPreview()"></textarea>
+    </div>
+
+    <div class="form-label" style="margin-bottom:6px">معاينة الرسالة</div>
+    <div id="wa-preview-text" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:9.5px;color:var(--text);line-height:1.85;white-space:pre-wrap;max-height:220px;overflow-y:auto;direction:rtl;text-align:right;font-family:inherit"></div>
+
+    <div class="modal-footer" style="margin-top:14px">
+      <button class="btn-cancel" onclick="document.getElementById('modal-wa-message').classList.add('hidden')">إلغاء</button>
+      <button class="btn-primary" onclick="_waSend()" style="background:#25D366;color:#fff">📲 فتح واتساب وإرسال</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     مودال إلغاء الحجز مع معاينة الرسالة
+══════════════════════════════════════ -->
+<div id="modal-cancel-booking" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title">❌ إلغاء الحجز</div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="form-label">سبب الإلغاء *</label>
+      <select id="cancel-reason" class="form-select" onchange="_cancelPreview()">
+        <option value="بناءً على طلب العميل">١ — بناءً على طلب العميل</option>
+        <option value="عدم السداد أو اكتمال البيانات">٢ — عدم السداد / عدم اكتمال البيانات</option>
+        <option value="ظروف طارئة من طرف المنشأة">٣ — ظروف طارئة من طرف المنشأة</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="form-label" id="cancel-note-label">ملاحظة / تفاصيل إضافية (تُضمَّن في الرسالة)</label>
+      <textarea id="cancel-note" class="form-textarea" rows="2"
+        placeholder="اكتب هنا أي تفاصيل إضافية..."
+        oninput="_cancelPreview()"></textarea>
+    </div>
+
+    <div class="form-label" style="margin-bottom:6px">معاينة رسالة واتساب التي ستُرسل للعميل</div>
+    <div id="cancel-preview" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:9.5px;color:var(--text);line-height:1.85;white-space:pre-wrap;max-height:220px;overflow-y:auto;direction:rtl;text-align:right;font-family:inherit">اختر سبب الإلغاء لرؤية الرسالة...</div>
+
+    <div class="modal-footer" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeModal('modal-cancel-booking')">رجوع</button>
+      <button class="btn-primary" onclick="confirmCancelBooking()" style="background:#C0392B;color:#fff">تأكيد الإلغاء وإرسال الرسالة ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── معاينة رسالة الإلغاء في الوقت الفعلي ──
+function _cancelPreview() {
+  const reason = document.getElementById('cancel-reason').value;
+  const note   = document.getElementById('cancel-note').value.trim();
+  const lbl    = document.getElementById('cancel-note-label');
+  const link   = 'https://calendar.app.google/9Y2F5hCLp6cm4Qmx6';
+
+  // تعديل تسمية الحقل حسب السبب
+  if (reason === 'عدم السداد أو اكتمال البيانات') {
+    lbl.textContent = 'السبب التفصيلي (سيُدرج في نص الرسالة)';
+    document.getElementById('cancel-note').placeholder = 'مثال: عدم استكمال عملية السداد خلال 24 ساعة';
+  } else if (reason === 'ظروف طارئة من طرف المنشأة') {
+    lbl.textContent = 'وصف الظرف الطارئ — يُذكر في الرسالة *';
+    document.getElementById('cancel-note').placeholder = 'مثال: أعمال صيانة طارئة / ظرف قاهر خارج إرادتنا';
+  } else {
+    lbl.textContent = 'ملاحظة إضافية (اختياري)';
+    document.getElementById('cancel-note').placeholder = 'أي تفاصيل إضافية تُضاف للرسالة...';
+  }
+
+  // بناء نص الرسالة للمعاينة (بدون بيانات العميل المجهولة وقت الفتح)
+  const booking = _cancelBookingId ? (typeof bookingsData !== 'undefined' ? bookingsData.find(b=>b.id===_cancelBookingId) : null) : null;
+  const name    = booking ? (booking.clientName || 'العميل الكريم') : '[اسم العميل]';
+  const service = booking ? (booking.sessionType || '—') : '[نوع الجلسة]';
+  const dt      = booking ? ((booking.bookingDate||'') + ' ' + (booking.bookingTime||'')) : '[التاريخ والوقت]';
+  const ref     = _cancelBookingId ? 'BK-' + _cancelBookingId.slice(-6).toUpperCase() : '[رقم الحجز]';
+
+  let msg = '';
+  if (reason === 'بناءً على طلب العميل') {
+    msg = `مرحباً ${name}، يسعدنا تواصلكم معنا.
+
+بناءً على طلبكم، نؤكد لكم أنه تم إلغاء الحجز بنجاح. أدناه تفاصيل الحجز الملغي:
+
+• رقم الحجز: ${ref}
+• الخدمة / الموعد: ${service} — ${dt}
+• سبب الإلغاء: بناءً على رغبة العميل${note ? '
+• ملاحظة: ' + note : ''}
+
+وقتكم يهمنا ونحن بانتظاركم دائماً؛ إذا استجدت أي ظروف وترغبون في اختيار موعد آخر يناسبكم، يمكنكم إعادة الحجز مباشرة وبخطوة واحدة عبر الرابط التالي:
+🔗 ${link}
+
+يومكم سعيد، ونفخر بخدمتكم في أي وقت.
+المستشار عبدالاله بدوي`;
+  } else if (reason === 'عدم السداد أو اكتمال البيانات') {
+    msg = `مرحباً ${name}، نأمل أن تكونوا بخير وعافية.
+
+يؤسفنا إبلاغكم بأنه تم إلغاء الحجز تلقائياً نظراً لـ ${note || 'عدم استكمال عملية السداد في الوقت المحدد'}.
+
+تفاصيل الحجز الملغي:
+
+• رقم الحجز: ${ref}
+• الخدمة / الموعد: ${service} — ${dt}
+
+ولأننا نحرص على تواجدكم معنا، لا تزال الفرصة متاحة لتأمين مقعدكم/موعدكم مجدداً. يمكنكم إعادة الحجز وإتمام العملية مباشرة عبر الرابط التالي:
+🔗 ${link}
+
+إذا واجهتكم أي مشكلة أثناء السداد، يرجى الرد على هذه الرسالة وسيقوم الدعم الفني بمساعدتكم فوراً.
+المستشار عبدالاله بدوي`;
+  } else {
+    const cause = note || 'ظرف طارئ وخارج عن إرادتنا';
+    msg = `مرحباً ${name}، نعتذر منكم بشدة.
+
+نظراً لـ ${cause}، يؤسفنا جداً إبلاغكم بإلغاء الحجز التالي:
+
+• رقم الحجز: ${ref}
+• الموعد الملغي: ${service} — ${dt}
+
+نكرر اعتذارنا عن أي إزعاج قد يسببه لكم هذا التغيير الطارئ. وتقديراً لوقتكم وثقتكم بنا، نود منحكم الأولوية في اختيار الموعد الجديد المناسب لكم.
+
+يرجى الضغط على الرابط أدناه لإعادة جدولة الحجز بكل سهولة:
+🔗 ${link}
+
+شكراً لتفهمكم وسعداء جداً بخدمتكم.
+المستشار عبدالاله بدوي`;
+  }
+
+  document.getElementById('cancel-preview').textContent = msg;
+}
+
+// تشغيل المعاينة عند فتح المودال تلقائياً
+const _origOpenCancelModal = window.openCancelModal;
+window.openCancelModal = function(id) {
+  if (typeof _origOpenCancelModal === 'function') _origOpenCancelModal(id);
+  else {
+    window._cancelBookingId = id;
+    document.getElementById('modal-cancel-booking').classList.remove('hidden');
+  }
+  document.getElementById('cancel-reason').value = 'بناءً على طلب العميل';
+  document.getElementById('cancel-note').value = '';
+  setTimeout(_cancelPreview, 50);
+};
+</script>
 
 </body>
 </html>
