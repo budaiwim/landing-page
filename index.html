@@ -12,6 +12,7 @@
 
 <!-- التحميل المسبق للصور الأساسية مع تحديد الأبعاد لمنع انزياح الصفحة -->
 <link rel="preload" as="image" href="https://budaiwim.com/assets/img/alswrt-alshkhsyt.webp" type="image/webp" fetchpriority="high">
+
 <link rel="preload" as="image" href="https://budaiwim.com/assets/img/khlfyt-sfht-alhbwt.webp" type="image/webp">
 
 <meta name="description" content="منظومة رقمية وقانونية متكاملة لربط وأتمتة وتأمين المنشآت والشركات الناشئة وفق منهجية النواة الرباعية؛ حوكمة إدارية، تحصين قانوني، أتمتة تقنية، ونمو تسويقي وضمان استدامة الأرباح.">
@@ -34,6 +35,32 @@
   --muted:#6B5E3F;--border:#E8E0CC;--section-bg:#F2EDE0;
 }
 
+/* ── نموذج الحجز متعدد الخطوات ── */
+.lf-step-indicator{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:1.25rem;}
+.lf-dot{width:28px;height:28px;border-radius:50%;background:#E8E0CC;color:var(--gold);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Lemonada',sans-serif;transition:all .3s;}
+.lf-active{background:var(--gold)!important;color:#1A1409!important;}
+.lf-done{background:#27AE60!important;color:#fff!important;}
+.lf-line{width:22px;height:2px;background:#E8E0CC;border-radius:2px;transition:background .3s;}
+.lf-line-done{background:#27AE60!important;}
+.lf-sess-card{border:2px solid var(--border);border-radius:10px;padding:11px 14px;cursor:pointer;transition:all .25s;position:relative;margin-bottom:8px;background:var(--white);}
+.lf-sess-card:hover{border-color:var(--gold-border);background:var(--gold-bg);}
+.lf-sess-sel{border-color:var(--gold)!important;background:var(--gold-bg)!important;}
+.lf-sess-title{font-size:12px;font-weight:700;color:var(--dark);}
+.lf-sess-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.lf-sess-price{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#27AE60;}
+.lf-day-btn{padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);font-family:'Lemonada',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--dark);}
+.lf-day-btn:hover{border-color:var(--gold);}
+.lf-day-active{background:var(--gold)!important;border-color:var(--gold)!important;color:var(--dark)!important;}
+.lf-day-full{opacity:.4;cursor:not-allowed;pointer-events:none;}
+.lf-time-btn{padding:7px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--white);font-family:'Lemonada',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--dark);}
+.lf-time-btn:hover{border-color:var(--gold);}
+.lf-time-sel{background:var(--gold)!important;border-color:var(--gold)!important;color:var(--dark)!important;}
+.lf-time-busy{background:#F5F5F0!important;color:#bbb!important;cursor:not-allowed!important;text-decoration:line-through;border-color:#ddd!important;}
+.lf-step-back{background:none;border:none;color:var(--gold);font-family:'Lemonada',sans-serif;font-size:10px;cursor:pointer;padding:0;margin-bottom:10px;display:flex;align-items:center;gap:4px;}
+.lf-summary{background:var(--gold-bg);border:1.5px solid var(--gold-border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+.lf-sum-row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px solid var(--border);}
+.lf-sum-row:last-child{border-bottom:none;font-weight:700;}
+/* ── */
 html,body{direction:rtl;font-family:'Lemonada', sans-serif;background:var(--page);color:var(--dark);overflow-x:hidden;scroll-behavior:smooth;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;width:100%;}
 
 nav{position:fixed;top:0;right:0;left:0;z-index:100;background:rgba(250,250,248,0.98);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);min-height:58px;}
@@ -411,7 +438,7 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
     <div class="ach-card">
       <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;">💻</span>
       <span class="stat-num" data-target="99.66" data-suffix="%" data-decimal="2">0%</span>
-      <div class="ach-desc">تقليل الهدر من 3,000,000 إلى أقل من 10,000 ريال سنوياً</div>
+      <div class="ach-desc">تقليل الهدر من 3,000,000 إلى أقل من 10,000 ⃁ سنوياً</div>
       <div class="ach-co">قطاع الاتصالات وتقنية المعلومات · STC</div>
       <button class="proof-img-btn" onclick="openImgProof('dashboard','لوحة تحكم نظام الأتمتة — Excel المبرمج')">🖼 شاهد الإثبات</button>
     </div>
@@ -571,38 +598,97 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 <div class="lead-form-overlay" id="leadFormOverlay">
   <div class="lead-form-box">
     <button class="lead-form-close" onclick="closeLead()">×</button>
-    <div id="leadFormContent">
-      <div style="text-align:center;margin-bottom:1.25rem">
-        <div style="font-size:2rem;margin-bottom:.5rem">🎯</div>
-        <div class="lead-form-title">احجز تشخيصاً مجانياً</div>
-        <div class="lead-form-sub">15 دقيقة تكشف ما يعيق مشروعك<br>أُحدد لك الخطوة التالية بدقة</div>
-      </div>
-      <div class="lead-form-group">
-        <label>اسمك الكريم</label>
-        <input type="text" id="leadName" placeholder="عبدالله محمد" required>
-      </div>
-      <div class="lead-form-group">
-        <label>رقم الجوال (واتساب)</label>
-        <input type="tel" id="leadPhone" placeholder="05xxxxxxxx" required>
-      </div>
-      <div class="lead-form-group">
-        <label>طبيعة مشروعك</label>
-        <select id="leadProject">
-          <option value="تسويق رقمي وحملات إعلانية">تسويق رقمي وحملات إعلانية</option>
-          <option value="هوية واستراتيجية تسويقية">هوية بصرية واستراتيجية تسويقية</option>
-          <option value="تشخيص وحوكمة مالية وإدارية">تشخيص وحوكمة مالية وإدارية</option>
-          <option value="مظلة استشارية متكاملة">مظلة استشارية متكاملة (النواة الرباعية)</option>
-          <option value="استشارة قانونية وعقود">استشارة قانونية وعقود</option>
-        </select>
-      </div>
-      <button class="lead-form-btn" onclick="submitLead()">احجز جلستي المجانية الآن ←</button>
-      <div class="lead-form-privacy">🔒 بياناتك محمية تماماً ولن تُشارك مع أي طرف ثالث</div>
+    <!-- مؤشر الخطوات -->
+    <div id="lf-step-indicator" class="lf-step-indicator">
+      <div class="lf-dot lf-active" id="lf-dot1">١</div>
+      <div class="lf-line" id="lf-ln1"></div>
+      <div class="lf-dot" id="lf-dot2">٢</div>
+      <div class="lf-line" id="lf-ln2"></div>
+      <div class="lf-dot" id="lf-dot3">٣</div>
     </div>
-    <div class="lead-form-success" id="leadSuccess">
-      <div class="s-icon">✅</div>
-      <h3>تم تسجيل طلبك بنجاح!</h3>
-      <p>سيتواصل معك المستشار عبدالاله بدوي<br>خلال أقل من 24 ساعة لتأكيد موعد الجلسة</p>
-      <button class="lead-form-btn" style="margin-top:1.25rem" onclick="openWhatsAppDirect()">تواصل مباشرة عبر واتساب</button>
+
+    <div id="leadFormContent">
+
+      <!-- الخطوة 1: البيانات الشخصية -->
+      <div id="lf-step1">
+        <div style="text-align:center;margin-bottom:1rem">
+          <div style="font-size:2rem;margin-bottom:.4rem">🎯</div>
+          <div class="lead-form-title">احجز جلستك الآن</div>
+          <div class="lead-form-sub">حجز مباشر — بدون انتظار</div>
+        </div>
+        <div class="lead-form-group">
+          <label>اسمك الكريم</label>
+          <input type="text" id="leadName" placeholder="عبدالله محمد">
+        </div>
+        <div class="lead-form-group">
+          <label>رقم الجوال (واتساب)</label>
+          <input type="tel" id="leadPhone" placeholder="05xxxxxxxx">
+        </div>
+        <div class="lead-form-group">
+          <label>طبيعة مشروعك</label>
+          <select id="leadProject">
+            <option value="تسويق رقمي وحملات إعلانية">تسويق رقمي وحملات إعلانية</option>
+            <option value="هوية بصرية واستراتيجية تسويقية">هوية بصرية واستراتيجية تسويقية</option>
+            <option value="تشخيص وحوكمة مالية وإدارية">تشخيص وحوكمة مالية وإدارية</option>
+            <option value="مظلة استشارية متكاملة">مظلة استشارية متكاملة (النواة الرباعية)</option>
+            <option value="استشارة قانونية وعقود">استشارة قانونية وعقود</option>
+          </select>
+        </div>
+        <button class="lead-form-btn" onclick="_lfNext1()">التالي — اختر نوع الجلسة ←</button>
+        <div class="lead-form-privacy">🔒 بياناتك محمية ولن تُشارك مع أي طرف ثالث</div>
+      </div>
+
+      <!-- الخطوة 2: نوع الجلسة -->
+      <div id="lf-step2" style="display:none">
+        <button class="lf-step-back" onclick="document.getElementById('lf-step1').style.display='';document.getElementById('lf-step2').style.display='none';document.getElementById('lf-dot1').className='lf-dot lf-active';document.getElementById('lf-dot2').className='lf-dot';document.getElementById('lf-ln1').className='lf-line';">← رجوع</button>
+        <div style="font-size:12px;font-weight:700;color:var(--dark);margin-bottom:10px;">اختر نوع الجلسة</div>
+        <div class="lf-sess-card" id="lf-sess-free" onclick="_lfSelectSession('free')">
+          <div class="lf-sess-title"> جلسة التشخيص المجانية</div>
+          <div class="lf-sess-meta">15 دقيقة — تحديد الفرصة والخطوة التالية</div>
+          <div class="lf-sess-price">مجانية</div>
+        </div>
+        <div class="lf-sess-card" id="lf-sess-s30" onclick="_lfSelectSession('s30')">
+          <div class="lf-sess-title"> استشارة متخصصة</div>
+          <div class="lf-sess-meta">30 دقيقة — تحليل ووضع خطة عمل</div>
+          <div class="lf-sess-price">299 ⃁</div>
+        </div>
+        <div class="lf-sess-card" id="lf-sess-s60" onclick="_lfSelectSession('s60')">
+          <div class="lf-sess-title"> استشارة معمّقة</div>
+          <div class="lf-sess-meta">60 دقيقة — استراتيجية شاملة وحلول متكاملة</div>
+          <div class="lf-sess-price">499 ⃁</div>
+        </div>
+        <div class="lf-sess-card" id="lf-sess-s90" onclick="_lfSelectSession('s90')">
+          <div class="lf-sess-title"> جلسة النواة الرباعية</div>
+          <div class="lf-sess-meta">90 دقيقة — تشخيص شامل للمنظومة الرباعية</div>
+          <div class="lf-sess-price">699 ⃁</div>
+        </div>
+        <button class="lead-form-btn" id="lf-btn2" onclick="_lfNext2()" style="opacity:.5;pointer-events:none;margin-top:6px">التالي — اختر الموعد ←</button>
+      </div>
+
+      <!-- الخطوة 3: الموعد -->
+      <div id="lf-step3" style="display:none">
+        <button class="lf-step-back" onclick="document.getElementById('lf-step2').style.display='';document.getElementById('lf-step3').style.display='none';document.getElementById('lf-dot2').className='lf-dot lf-active';document.getElementById('lf-dot3').className='lf-dot';document.getElementById('lf-ln2').className='lf-line';">← رجوع</button>
+        <div style="font-size:12px;font-weight:700;color:var(--dark);margin-bottom:10px;">اختر يوم الموعد</div>
+        <div id="lf-slots-area"><div style="text-align:center;padding:1rem;color:var(--muted);font-size:11px">⏳ جاري التحميل...</div></div>
+        <button class="lead-form-btn" id="lf-btn3" onclick="_lfConfirm()" style="opacity:.5;pointer-events:none;margin-top:12px">تأكيد الحجز ✓</button>
+      </div>
+
+    </div>
+
+    <!-- شاشة النجاح -->
+    <div class="lead-form-success" id="leadSuccess" style="display:none">
+      <div class="s-icon">🎉</div>
+      <h3>تم تأكيد حجزك!</h3>
+      <div class="lf-summary" id="lf-summary"></div>
+      <p style="font-size:10.5px;color:var(--muted);margin-bottom:12px">
+        ستصلك رسالة تأكيد عبر واتساب قريباً
+      </p>
+      <button class="lead-form-btn" style="background:#25D366;margin-bottom:8px" onclick="_lfSendReminder()">
+        🟩 احفظ تذكير الموعد عبر واتساب
+      </button>
+      <button class="lead-form-btn" style="background:transparent;border:1.5px solid var(--border);color:var(--muted)" onclick="closeLead()">
+        إغلاق
+      </button>
     </div>
   </div>
 </div>
@@ -647,34 +733,19 @@ function openLead(){
   document.getElementById('leadFormOverlay').classList.add('open');
   document.getElementById('leadFormContent').style.display='block';
   document.getElementById('leadSuccess').style.display='none';
+  document.getElementById('lf-step-indicator').style.display='flex';
+  // إعادة النموذج للخطوة الأولى دائماً
+  ['lf-step1','lf-step2','lf-step3'].forEach((id,i)=>{
+    document.getElementById(id).style.display = i===0 ? '' : 'none';
+  });
+  document.getElementById('lf-dot1').className='lf-dot lf-active';
+  document.getElementById('lf-dot2').className='lf-dot';
+  document.getElementById('lf-dot3').className='lf-dot';
+  document.getElementById('lf-ln1').className='lf-line';
+  document.getElementById('lf-ln2').className='lf-line';
 }
-function closeLead(){document.getElementById('leadFormOverlay').classList.remove('open');}
-
-/* ===== Submit ===== */
-function submitLead(){
-  var name=document.getElementById('leadName').value.trim();
-  var phone=document.getElementById('leadPhone').value.trim().replace(/\D/g,'');
-  var project=document.getElementById('leadProject').value;
-  if(!name){document.getElementById('leadName').style.borderColor='#C0392B';document.getElementById('leadName').focus();return;}
-  if(phone.length<9){document.getElementById('leadPhone').style.borderColor='#C0392B';document.getElementById('leadPhone').focus();return;}
-  var waPhone=phone.startsWith('0')?'966'+phone.slice(1):phone;
-  var url="https://script.google.com/macros/s/AKfycbwHnciVQrhJP1fMoGoUbTmxBz3Zp137RtWx6kOMsn4v-tqE5zw4LWnLV8PaObnBPcT_/exec";
-  var formData=new FormData();
-  formData.append("name",name);
-  formData.append("phone",waPhone);
-  formData.append("project_type",project);
-  fetch(url,{method:"POST",body:formData})
-    .then(r=>r.text())
-    .then(()=>{
-      document.getElementById('leadFormContent').style.display='none';
-      document.getElementById('leadSuccess').style.display='block';
-      showToast("✅ تم التسجيل — سيتواصل معك المستشار قريباً");
-      var txt=encodeURIComponent('أهلاً المستشار عبدالاله، أنا '+name+' أرغب في التشخيص المجاني بخصوص: '+project);
-      setTimeout(()=>window.open('https://wa.me/966533140328?text='+txt,'_blank'),300);
-    })
-    .catch(()=>{alert("حدث خطأ أثناء إرسال البيانات");});
-}
-function openWhatsAppDirect(){window.open('https://wa.me/966533140328','_blank');}
+function closeLead(){ document.getElementById('leadFormOverlay').classList.remove('open'); }
+function openWhatsAppDirect(){ window.open('https://wa.me/966533140328','_blank'); }
 function showToast(msg){
   var t=document.getElementById('statusToast');
   t.textContent=msg;t.classList.add('show');
@@ -729,6 +800,321 @@ document.querySelectorAll('[data-magnetic]').forEach(function(card){
 var scrollBtn=document.getElementById('btnScrollUp');
 window.addEventListener('scroll',function(){scrollBtn.classList[window.scrollY>400?'add':'remove']('show');});
 scrollBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+</script>
+
+<script type="module">
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+
+const _fbApp = initializeApp({
+  apiKey:            "AIzaSyAa0iRUM17oBdPVfC9oKe8gEMVJeCMYNWo",
+  authDomain:        "badawi-erp.firebaseapp.com",
+  projectId:         "badawi-erp",
+  storageBucket:     "badawi-erp.firebasestorage.app",
+  messagingSenderId: "962373295267",
+  appId:             "1:962373295267:web:a8f433c9a9d084ee31b316"
+}, 'landing');
+const _db = getFirestore(_fbApp);
+
+// الجلسات المتاحة
+const SESSIONS = [
+  { id:'free', label:'🎯 تشخيص مجاني',         duration:15, price:0    },
+  { id:'s30',  label:'💼 استشارة متخصصة',       duration:30, price:299  },
+  { id:'s60',  label:'🚀 استشارة معمّقة',        duration:60, price:499  },
+  { id:'s90',  label:'👑 جلسة النواة الرباعية',  duration:90, price:699  }
+];
+
+// حالة النموذج
+let _state = {
+  step: 1,
+  name:'', phone:'', project:'',
+  session: null,
+  date:'', dateLabel:'', time:'',
+  bookedSlots: {} // { 'YYYY-MM-DD': ['10:00','10:30',...] }
+};
+
+// تهيئة المحول + فحص LocalLocked
+let _localLocked = {};
+try { const s=sessionStorage.getItem('bw_locked'); if(s) _localLocked=JSON.parse(s); } catch(e){}
+
+/* ── Navigation ── */
+function _goStep(n) {
+  _state.step = n;
+  [1,2,3].forEach(i=>{
+    document.getElementById('lf-step'+i).style.display = i===n?'':'none';
+  });
+  // مؤشر الخطوات
+  [1,2,3].forEach(i=>{
+    const dot = document.getElementById('lf-dot'+i);
+    if(!dot) return;
+    dot.className = 'lf-dot' + (i<n?' lf-done': i===n?' lf-active':'');
+  });
+  const ln1 = document.getElementById('lf-ln1');
+  const ln2 = document.getElementById('lf-ln2');
+  if(ln1) ln1.className = 'lf-line'+(n>1?' lf-line-done':'');
+  if(ln2) ln2.className = 'lf-line'+(n>2?' lf-line-done':'');
+}
+
+/* ── Step 1 → 2 ── */
+window._lfNext1 = function() {
+  const name  = document.getElementById('leadName').value.trim();
+  const phone = document.getElementById('leadPhone').value.trim().replace(/\D/g,'');
+  const proj  = document.getElementById('leadProject').value;
+  if(!name){ document.getElementById('leadName').style.borderColor='#C0392B'; document.getElementById('leadName').focus(); return; }
+  if(phone.length<9){ document.getElementById('leadPhone').style.borderColor='#C0392B'; document.getElementById('leadPhone').focus(); return; }
+  _state.name    = name;
+  _state.phone   = phone.startsWith('0') ? '966'+phone.slice(1) : phone;
+  _state.project = proj;
+  _goStep(2);
+};
+
+/* ── اختيار الجلسة ── */
+window._lfSelectSession = function(id) {
+  _state.session = SESSIONS.find(s=>s.id===id);
+  document.querySelectorAll('.lf-sess-card').forEach(c=>c.classList.remove('lf-sess-sel'));
+  document.getElementById('lf-sess-'+id).classList.add('lf-sess-sel');
+  document.getElementById('lf-btn2').style.opacity='1';
+  document.getElementById('lf-btn2').style.pointerEvents='auto';
+};
+
+/* ── Step 2 → 3 ── */
+window._lfNext2 = function() {
+  if(!_state.session) return;
+  _goStep(3);
+  _loadSlots();
+};
+
+/* ── جلب المواعيد من Firestore ── */
+async function _loadSlots() {
+  document.getElementById('lf-slots-area').innerHTML =
+    '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:11px">⏳ جاري تحميل الأوقات المتاحة...</div>';
+
+  const today = new Date();
+  const days  = [];
+  for(let d=1; d<=21 && days.length<10; d++){
+    const dt = new Date(today);
+    dt.setDate(today.getDate()+d);
+    if([0,1,2,3,4].includes(dt.getDay())) days.push(dt);
+  }
+
+  // جلب الحجوزات الموجودة
+  try {
+    const snap = await getDocs(query(collection(_db,'bookings'), where('status','==','مؤكد')));
+    _state.bookedSlots = {};
+    snap.forEach(doc=>{
+      const b = doc.data();
+      if(b.bookingDate && b.bookingTime){
+        if(!_state.bookedSlots[b.bookingDate]) _state.bookedSlots[b.bookingDate]=[];
+        // احجز كل الخانات التي تغطيها الجلسة
+        const [h,m] = b.bookingTime.split(':').map(Number);
+        let cur = h*60+m;
+        const dur = parseInt(b.duration)||60;
+        for(let i=0;i<Math.ceil(dur/15);i++){
+          const th=Math.floor(cur/60), tm=cur%60;
+          _state.bookedSlots[b.bookingDate].push(
+            (th<10?'0':'')+th+':'+(tm<10?'0':'')+tm
+          );
+          cur+=15;
+        }
+      }
+    });
+  } catch(e){ _state.bookedSlots={}; }
+
+  _renderDays(days);
+}
+
+/* ── عرض أزرار الأيام ── */
+const _DAY_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
+const _MON_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function _renderDays(days) {
+  const dur   = _state.session.duration;
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;">';
+  days.forEach(dt=>{
+    const key = dt.toISOString().slice(0,10);
+    const label = _DAY_NAMES[dt.getDay()]+' '+dt.getDate()+' '+_MON_NAMES[dt.getMonth()];
+    const booked = _state.bookedSlots[key]||[];
+    const locked = _localLocked[key]||[];
+    // تحقق من وجود أوقات متاحة
+    const hasFree = _timeSlots(key,dur,booked,locked).some(t=>!t.busy);
+    html += '<button class="lf-day-btn'+(hasFree?'':' lf-day-full')+'" data-date="'+key+'" data-label="'+label+'"'
+       +' onclick="window._lfSelectDay(\''+key+'\',\''+label+'\')">'+label+'</button>';
+  });
+  html += '</div>';
+  html += '<div id="lf-times-label" style="display:none;font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">الأوقات المتاحة</div>';
+  html += '<div id="lf-times" style="display:flex;flex-wrap:wrap;gap:7px;min-height:44px;"></div>';
+  html += '<div id="lf-slot-msg" style="font-size:10px;color:#C0392B;margin-top:6px;display:none;"></div>';
+  document.getElementById('lf-slots-area').innerHTML = html;
+}
+
+/* ── توليد خانات الوقت ── */
+function _timeSlots(dateKey, dur, booked, locked) {
+  const slots=[], startMin=10*60, endMin=18*60+45;
+  let cur=startMin;
+  while(cur+dur<=endMin+dur){
+    const h=Math.floor(cur/60), m=cur%60;
+    const t=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+    // تحقق من إشغال كل دقيقة في مدة الجلسة
+    let busy=false;
+    for(let i=0;i<Math.ceil(dur/15);i++){
+      const ch=Math.floor((cur+i*15)/60), cm=(cur+i*15)%60;
+      const ct=(ch<10?'0':'')+ch+':'+(cm<10?'0':'')+cm;
+      if(booked.includes(ct)||locked.includes(ct)){busy=true;break;}
+    }
+    slots.push({t,busy});
+    cur+=dur;
+    if(cur>endMin) break;
+  }
+  return slots;
+}
+
+/* ── اختيار يوم ── */
+window._lfSelectDay = function(dateKey, dateLabel) {
+  _state.date=dateKey; _state.dateLabel=dateLabel; _state.time='';
+  document.querySelectorAll('.lf-day-btn').forEach(b=>b.classList.remove('lf-day-active'));
+  const btn=document.querySelector('[data-date="'+dateKey+'"]');
+  if(btn) btn.classList.add('lf-day-active');
+  document.getElementById('lf-times-label').style.display='';
+  document.getElementById('lf-btn3').style.opacity='.5';
+  document.getElementById('lf-btn3').style.pointerEvents='none';
+  const dur    = _state.session.duration;
+  const booked = _state.bookedSlots[dateKey]||[];
+  const locked = _localLocked[dateKey]||[];
+  const slots  = _timeSlots(dateKey, dur, booked, locked);
+  const timesEl= document.getElementById('lf-times');
+  timesEl.innerHTML = slots.map(function(s){
+    return '<button class="lf-time-btn'+(s.busy?' lf-time-busy':'')+'" data-time="'+s.t+'"'
+      +(s.busy?' disabled':'')+' onclick="window._lfSelectTime(\''+s.t+'\',this)">'+s.t+'</button>';
+  }).join('');
+  if(!slots.length){
+    timesEl.innerHTML='<div style="font-size:10px;color:#C0392B">لا توجد أوقات متاحة</div>';
+  }
+};
+
+/* ── اختيار وقت ── */
+window._lfSelectTime = function(time, btn) {
+  _state.time=time;
+  document.querySelectorAll('.lf-time-btn').forEach(b=>b.classList.remove('lf-time-sel'));
+  btn.classList.add('lf-time-sel');
+  document.getElementById('lf-btn3').style.opacity='1';
+  document.getElementById('lf-btn3').style.pointerEvents='auto';
+};
+
+/* ── تأكيد الحجز ── */
+window._lfConfirm = async function() {
+  if(!_state.date||!_state.time||!_state.session) return;
+  const btn=document.getElementById('lf-btn3');
+  btn.textContent='⏳ جاري الحجز...'; btn.style.pointerEvents='none';
+
+  // ① قفل فوري في الذاكرة المحلية
+  const dur=_state.session.duration;
+  if(!_localLocked[_state.date]) _localLocked[_state.date]=[];
+  const [h,m]=_state.time.split(':').map(Number);
+  let cur=h*60+m;
+  for(let i=0;i<Math.ceil(dur/15);i++){
+    const th=Math.floor(cur/60),tm=cur%60;
+    _localLocked[_state.date].push((th<10?'0':'')+th+':'+(tm<10?'0':'')+tm);
+    cur+=15;
+  }
+  try{sessionStorage.setItem('bw_locked',JSON.stringify(_localLocked));}catch(e){}
+
+  // ② حفظ في Firestore
+  try {
+    await addDoc(collection(_db,'bookings'),{
+      clientName:   _state.name,
+      clientPhone:  _state.phone,
+      project:      _state.project,
+      sessionType:  _state.session.label,
+      duration:     _state.session.duration,
+      price:        _state.session.price,
+      bookingDate:  _state.date,
+      bookingTime:  _state.time,
+      status:       'مؤكد',
+      source:       'صفحة الهبوط',
+      createdAt:    serverTimestamp()
+    });
+    await addDoc(collection(_db,'leads'),{
+      name:       _state.name,
+      phone:      _state.phone,
+      project:    _state.project,
+      source:     'صفحة الهبوط',
+      status:     'جديد',
+      sessionType:_state.session.label,
+      bookingDate:_state.date,
+      bookingTime:_state.time,
+      createdAt:  serverTimestamp()
+    });
+  } catch(e){ console.warn('Firebase error:', e); }
+
+  // ③ إرسال Google Apps Script (backup)
+  try{
+    const fd=new FormData();
+    fd.append('name',_state.name); fd.append('phone',_state.phone);
+    fd.append('project_type',_state.project); fd.append('source','صفحة الهبوط');
+    fd.append('session_type',_state.session.label);
+    fd.append('booking_date',_state.date); fd.append('booking_time',_state.time);
+    fetch("https://script.google.com/macros/s/AKfycbwHnciVQrhJP1fMoGoUbTmxBz3Zp137RtWx6kOMsn4v-tqE5zw4LWnLV8PaObnBPcT_/exec",
+      {method:'POST',mode:'no-cors',body:fd});
+  }catch(e){}
+
+  _showSuccess();
+};
+
+/* ── شاشة النجاح ── */
+function _showSuccess(){
+  document.getElementById('leadFormContent').style.display='none';
+  document.getElementById('lf-step-indicator').style.display='none';
+  document.getElementById('leadSuccess').style.display='block';
+
+  // ملخص الحجز
+  const isPaid=_state.session.price>0;
+  document.getElementById('lf-summary').innerHTML=
+    '<div class="lf-sum-row"><span>الاسم</span><span>'+_state.name+'</span></div>'+
+    '<div class="lf-sum-row"><span>نوع الجلسة</span><span>'+_state.session.label+'</span></div>'+
+    '<div class="lf-sum-row"><span>التاريخ</span><span>'+_state.dateLabel+'</span></div>'+
+    '<div class="lf-sum-row"><span>الوقت</span><span>'+_state.time+'</span></div>'+
+    '<div class="lf-sum-row"><span>الرسوم</span><span style="color:var(--gold);font-weight:700">'+(isPaid?_state.session.price.toLocaleString('ar-SA')+' ⃁':'مجانية ✓')+'</span></div>';
+
+  showToast('✓ تم تأكيد حجزك بنجاح!');
+
+    // رسالة واتساب للمستشار عند الحجز
+  var _aLines=[
+    ' حجز جديد — النواة الرباعية',
+    'الاسم: '+_state.name,
+    'الجوال: '+_state.phone,
+    'المشروع: '+_state.project,
+    'الجلسة: '+(_state.session?_state.session.label:'—')+' ('+(_state.session?_state.session.duration:'')+'د)',
+    'الموعد: '+_state.dateLabel+' — '+_state.time,
+    'الرسوم: '+(isPaid&&_state.session?_state.session.price.toLocaleString('ar-SA')+' ⃁':'مجانية')
+  ];
+  const advisorMsg=encodeURIComponent(_aLines.join('\n'));
+  setTimeout(function(){window.open('https://wa.me/966533140328?text='+advisorMsg,'_blank');},500);
+}
+
+/* ── زر واتساب تذكير للعميل ── */
+window._lfSendReminder = function() {
+  if(!_state.session||!_state.phone) return;
+  var isPaid=_state.session.price>0;
+  var _rLines=[
+    'مرحباً '+_state.name+'،',
+    'معك المستشار عبدالاله بدوي ',
+    '',
+    ' تذكير بموعد جلستك:',
+    '• النوع: '+_state.session.label,
+    '• التاريخ: '+_state.dateLabel,
+    '• الوقت: '+_state.time,
+    isPaid?'• الرسوم: '+_state.session.price.toLocaleString('ar-SA')+' ⃁':' الجلسة: مجانية ✓',
+    '',
+    'نتطلع للقائك — لإعادة الجدولة أخبرنا قبل 24 ساعة.'
+  ];
+  var msg=encodeURIComponent(_rLines.join('\n'));
+  window.open('https://wa.me/'+_state.phone+'?text='+msg,'_blank');
+};
+
+window._openLead_step1=function(){ _state.step=1; };
+
 </script>
 </body>
 </html>
