@@ -358,11 +358,101 @@
   // MODULE 2 — CRM
   // ═══════════════════════════════════════════
   let leadsData = [];
-  async function loadCRM() {
+  let _knownLeadIds = new Set();
+  let _crmFirstLoad = true;
+
+  function loadCRM() {
     const q = query(collection(db,'leads'), orderBy('createdAt','desc'));
-    const snap = await getDocs(q);
-    leadsData = snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderLeads();
+    const unsub = onSnapshot(q, snap => {
+      const prev = _crmFirstLoad;
+      leadsData = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+      // كشف العملاء الجدد بعد التحميل الأول
+      if (!_crmFirstLoad) {
+        snap.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const l = {id: change.doc.id, ...change.doc.data()};
+            if (!_knownLeadIds.has(l.id)) {
+              _knownLeadIds.add(l.id);
+              _notifyNewLead(l);
+            }
+          }
+        });
+      } else {
+        snap.docs.forEach(d => _knownLeadIds.add(d.id));
+        _crmFirstLoad = false;
+      }
+
+      renderLeads();
+      // تحديث بادج التنبيه في الـ sidebar
+      _updateLeadsBadge();
+    }, e => toast('خطأ في تحميل العملاء','error'));
+    unsubscribers.push(unsub);
+  }
+
+  function _updateLeadsBadge() {
+    const newCount = leadsData.filter(l => !l.status || l.status === 'جديد').length;
+    const badge = document.getElementById('crm-new-badge');
+    if (badge) {
+      badge.textContent = newCount;
+      badge.style.display = newCount > 0 ? 'inline-flex' : 'none';
+    }
+  }
+
+  function _notifyNewLead(lead) {
+    // ─ صوت التنبيه ─
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [440,550,660].forEach((freq,i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = freq; o.type = 'sine';
+        g.gain.setValueAtTime(0.3, ctx.currentTime + i*0.15);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.15 + 0.3);
+        o.start(ctx.currentTime + i*0.15);
+        o.stop(ctx.currentTime + i*0.15 + 0.3);
+      });
+    } catch(e){}
+
+    // ─ تنبيه منبثق داخلي ─
+    const src = lead.source || 'غير محدد';
+    const isLanding = src.includes('صفحة الهبوط');
+    const popup = document.createElement('div');
+    popup.id = 'lead-popup-' + lead.id;
+    popup.style.cssText = `
+      position:fixed;bottom:20px;left:20px;z-index:9999;
+      background:#15120A;border:1.5px solid #E2C97A;border-radius:14px;
+      padding:14px 18px;max-width:320px;animation:slideInUp .3s ease;
+      box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl;
+    `;
+    popup.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#E2C97A;margin-bottom:4px">
+            ${isLanding ? '🌐 عميل جديد من صفحة الهبوط!' : '👤 عميل جديد مضاف!'}
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#F5EDD6">${lead.name||'—'}</div>
+          <div style="font-size:10px;color:#A09070;margin-top:2px">
+            📱 ${lead.phone||'—'} &nbsp;|&nbsp; 💼 ${lead.project||'—'}
+          </div>
+          <div style="font-size:9px;color:#6B5E3F;margin-top:4px">المصدر: ${src}</div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" 
+          style="background:none;border:none;color:#6B5E3F;font-size:16px;cursor:pointer;padding:0;line-height:1">×</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button onclick="loadModule('crm');document.getElementById('lead-popup-${lead.id}').remove()"
+          style="flex:1;padding:6px;background:#E2C97A;color:#1A1409;border:none;border-radius:6px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Lemonada',sans-serif">
+          عرض العميل ←
+        </button>
+        <button onclick="openWhatsApp('${lead.phone}','${lead.name}','${(lead.project||'').replace(/'/g,'')}')"
+          style="padding:6px 10px;background:#25D366;color:#fff;border:none;border-radius:6px;font-size:9px;cursor:pointer">
+          📲
+        </button>
+      </div>
+    `;
+    document.body.appendChild(popup);
+    setTimeout(()=>{ if(popup.parentElement) popup.remove(); }, 12000);
   }
 
   function renderLeads(filter='') {
@@ -370,24 +460,30 @@
       ? leadsData.filter(l=>l.status===filter)
       : leadsData;
     document.getElementById('crm-count').textContent = data.length + ' عميل';
-    document.getElementById('crm-tbody').innerHTML = data.map(l=>`
-      <tr class="tr-row">
-        <td class="td font-bold">${l.name||'—'}</td>
+    document.getElementById('crm-tbody').innerHTML = data.map(l=>{
+      const isLanding = (l.source||'').includes('صفحة الهبوط');
+      const dateStr   = l.createdAt?.seconds ? new Date(l.createdAt.seconds*1000).toLocaleDateString('ar-SA') : '—';
+      return `<tr class="tr-row" style="${isLanding?'border-right:2px solid #E2C97A':''}">
+        <td class="td font-bold">
+          ${isLanding?'<span style="font-size:8px;background:#E2C97A;color:#1A1409;border-radius:4px;padding:1px 5px;margin-left:4px">🌐 هبوط</span>':''}
+          ${l.name||'—'}
+        </td>
         <td class="td font-mono">${l.phone||'—'}</td>
-        <td class="td">${l.project||'—'}</td>
+        <td class="td">${l.project||l.sessionType||'—'}</td>
         <td class="td"><span class="badge badge-${statusClass(l.status)}">${l.status||'جديد'}</span></td>
-        <td class="td">${l.source||'—'}</td>
+        <td class="td" style="font-size:9px">${l.bookingDate?l.bookingDate+' '+( l.bookingTime||''):'—'}</td>
+        <td class="td" style="font-size:9px;color:var(--muted)">${l.source||'—'}</td>
         <td class="td">
           <select onchange="updateLeadStatus('${l.id}',this.value)" class="sel-mini">
-            ${['جديد','قيد المتابعة','مغلق ناجح','مغلق مستبعد'].map(s=>`
-              <option ${l.status===s?'selected':''} value="${s}">${s}</option>`).join('')}
+            ${['جديد','قيد المتابعة','مغلق ناجح','مغلق مستبعد'].map(s=>
+              `<option ${l.status===s?'selected':''} value="${s}">${s}</option>`).join('')}
           </select>
         </td>
         <td class="td">
-          <button onclick="openWhatsApp('${l.phone}','${l.name}','${l.project||''}')" class="btn-xs btn-green">واتساب</button>
+          <button onclick="openWhatsApp('${l.phone}','${l.name}','${(l.project||l.sessionType||'').replace(/'/g,'')}')" class="btn-xs btn-green">واتساب</button>
           <button onclick="deleteLead('${l.id}')" class="btn-xs btn-red" data-manager-only>حذف</button>
         </td>
-      </tr>`).join('');
+      </tr>`;}).join('');
   }
 
   async function addLead() {
@@ -502,12 +598,33 @@
     { label:'جلسة النواة الرباعية', duration:90, price:699 },
   ];
 
-  async function loadBookings() {
+  let _knownBookingIds = new Set();
+  let _bookFirstLoad = true;
+
+  function loadBookings() {
     const q = query(collection(db,'bookings'), orderBy('bookingDate','desc'));
-    const snap = await getDocs(q);
-    bookingsData = snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderBookings();
-    renderCalendar();
+    const unsub = onSnapshot(q, snap => {
+      bookingsData = snap.docs.map(d=>({id:d.id,...d.data()}));
+      if (!_bookFirstLoad) {
+        snap.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const b = {id:change.doc.id,...change.doc.data()};
+            if (!_knownBookingIds.has(b.id)) {
+              _knownBookingIds.add(b.id);
+              if (b.source === 'صفحة الهبوط') {
+                toast(`📅 حجز جديد من الموقع: ${b.clientName} — ${b.sessionType}`);
+              }
+            }
+          }
+        });
+      } else {
+        snap.docs.forEach(d => _knownBookingIds.add(d.id));
+        _bookFirstLoad = false;
+      }
+      renderBookings();
+      renderCalendar();
+    });
+    unsubscribers.push(unsub);
   }
 
   function renderBookings(filter='') {
@@ -1203,6 +1320,7 @@
     addBooking, openCancelModal, confirmCancel, renderBookings,
     dashSetPeriod, dashApplyCustom, dashExportExcel, _waBuild, _waSend,
     addQuoteItem, removeQuoteItem, saveQuote, convertToInvoice, deleteQuote, printQuote,
+    quoteClientSearch, quoteClientFill,
     markPaid, deleteInvoice, printInvoice,
     addTransaction, deleteTransaction,
     addAffiliate, addCommission, payCommission, deleteAffiliate,
@@ -1456,6 +1574,7 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
     <div class="nav-section">المبيعات</div>
     <div class="nav-item" data-module="crm" onclick="loadModule('crm')">
       <span class="icon">👥</span><span class="nav-label">إدارة العملاء CRM</span>
+      <span id="crm-new-badge" style="display:none;background:#E2C97A;color:#1A1409;border-radius:50%;width:18px;height:18px;font-size:9px;font-weight:700;align-items:center;justify-content:center;margin-right:auto">0</span>
     </div>
     <div class="nav-item" data-module="bookings" onclick="loadModule('bookings')">
       <span class="icon">📅</span><span class="nav-label">نظام الحجوزات</span>
@@ -1586,7 +1705,7 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
         </div>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>الاسم</th><th>الجوال</th><th>المشروع</th><th>الحالة</th><th>المصدر</th><th>تغيير الحالة</th><th>إجراءات</th></tr></thead>
+        <table><thead><tr><th>الاسم</th><th>الجوال</th><th>المشروع</th><th>الحالة</th><th>الموعد</th><th>المصدر</th><th>تغيير الحالة</th><th>إجراءات</th></tr></thead>
         <tbody id="crm-tbody"><tr><td colspan="7" class="empty-state">جاري التحميل...</td></tr></tbody></table>
       </div>
     </div>
@@ -1752,8 +1871,12 @@ thead th { background: var(--bg3); padding: 10px 14px; text-align: right; font-s
   <div class="modal-box" style="max-width:640px">
     <div class="modal-title">📋 عرض سعر جديد</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group"><label class="form-label">اسم العميل *</label><input id="q-client-name" class="form-input" placeholder="اسم العميل"></div>
-      <div class="form-group"><label class="form-label">الجوال</label><input id="q-client-phone" class="form-input" placeholder="966XXXXXXXXX"></div>
+      <div class="form-group" style="position:relative">
+        <label class="form-label">اسم العميل / الجوال * <span style="font-size:8px;color:var(--gold)">(اكتب للبحث التلقائي)</span></label>
+        <input id="q-client-name" class="form-input" placeholder="ابدأ بكتابة اسم العميل أو رقم جواله..." oninput="quoteClientSearch()" autocomplete="off">
+        <div id="q-client-suggestions" style="display:none;position:absolute;top:100%;right:0;left:0;background:#1A1409;border:1px solid #E2C97A;border-radius:8px;z-index:100;max-height:200px;overflow-y:auto;margin-top:2px"></div>
+      </div>
+      <div class="form-group"><label class="form-label">الجوال (يُملأ تلقائياً)</label><input id="q-client-phone" class="form-input" placeholder="يُملأ تلقائياً عند اختيار العميل"></div>
     </div>
     <div class="form-group" style="margin-bottom:8px"><label class="form-label">إضافة بند</label>
       <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end">
