@@ -804,19 +804,26 @@ scrollBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:'s
 
 <script type="module">
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
 import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
 
-const _fbApp = initializeApp({
+const _fbConfig = {
   apiKey:            "AIzaSyCiLqkS-nYwGq-Sm-_BRfS0XMMpUp4OKEI",
   authDomain:        "budaiwim-erp.firebaseapp.com",
   projectId:         "budaiwim-erp",
   storageBucket:     "budaiwim-erp.firebasestorage.app",
   messagingSenderId: "1094445094611",
   appId:             "1:1094445094611:web:a9d8b4a522f35cc2e7a626"
-}, 'landing');
+};
+
+// تجنب تهيئة مزدوجة
+const _existingApp = getApps().find(a => a.name === 'landing');
+const _fbApp = _existingApp || initializeApp(_fbConfig, 'landing');
 const _db = getFirestore(_fbApp);
+
+// اختبار الاتصال
+console.log('✅ Firebase Landing initialized — project:', _fbConfig.projectId);
 
 // الجلسات المتاحة
 const SESSIONS = [
@@ -1021,6 +1028,11 @@ window._lfConfirm = async function() {
   try{sessionStorage.setItem('bw_locked',JSON.stringify(_localLocked));}catch(e){}
 
   // ② حفظ في Firestore
+  console.log('📝 Saving to Firebase...', {
+    name: _state.name, phone: _state.phone,
+    project: _state.project, session: _state.session?.label,
+    date: _state.date, time: _state.time
+  });
   try {
     await addDoc(collection(_db,'bookings'),{
       clientName:   _state.name,
@@ -1035,7 +1047,7 @@ window._lfConfirm = async function() {
       source:       'صفحة الهبوط',
       createdAt:    serverTimestamp()
     });
-    await addDoc(collection(_db,'leads'),{
+    const leadRef = await addDoc(collection(_db,'leads'),{
       name:       _state.name,
       phone:      _state.phone,
       project:    _state.project,
@@ -1046,7 +1058,14 @@ window._lfConfirm = async function() {
       bookingTime:_state.time,
       createdAt:  serverTimestamp()
     });
-  } catch(e){ console.warn('Firebase error:', e); }
+    console.log('✅ Saved to Firebase! lead:', leadRef.id);
+  } catch(e){
+    console.error('❌ Firebase write error:', e.code, e.message);
+    // إظهار الخطأ للمستخدم إن كان permission denied
+    if(e.code === 'permission-denied') {
+      showToast('⚠ خطأ في الحفظ: تحقق من إعدادات قاعدة البيانات');
+    }
+  }
 
   // ③ إرسال Google Apps Script (backup)
   try{
