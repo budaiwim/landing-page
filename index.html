@@ -12,7 +12,6 @@
 
 <!-- التحميل المسبق للصور الأساسية مع تحديد الأبعاد لمنع انزياح الصفحة -->
 <link rel="preload" as="image" href="https://budaiwim.com/assets/img/alswrt-alshkhsyt.webp" type="image/webp" fetchpriority="high">
-
 <link rel="preload" as="image" href="https://budaiwim.com/assets/img/khlfyt-sfht-alhbwt.webp" type="image/webp">
 
 <meta name="description" content="منظومة رقمية وقانونية متكاملة لربط وأتمتة وتأمين المنشآت والشركات الناشئة وفق منهجية النواة الرباعية؛ حوكمة إدارية، تحصين قانوني، أتمتة تقنية، ونمو تسويقي وضمان استدامة الأرباح.">
@@ -30,15 +29,16 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{
-  --gold:#8B6914;--gold-bg:#F5EDD6;--gold-mid:#C9A84C;--gold-border:#E2C97A;
+  /* تم تحسين درجات التباين النصي هنا بدقة متناهية لتطابق معايير الـ Accessibility (Contrast Ratio) دون ملاحظة أي فرق بصري يذكر */
+  --gold:#73560F;--gold-bg:#F5EDD6;--gold-mid:#A18231;--gold-border:#E2C97A;
   --page:#FAFAF8;--white:#FFFFFF;--dark:#1A1409;--dark2:#3D2E0A;
-  --muted:#6B5E3F;--border:#E8E0CC;--section-bg:#F2EDE0;
+  --muted:#54492E;--border:#E8E0CC;--section-bg:#F2EDE0;
 }
 
 /* ── نموذج الحجز متعدد الخطوات ── */
 .lf-step-indicator{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:1.25rem;}
 .lf-dot{width:28px;height:28px;border-radius:50%;background:#E8E0CC;color:var(--gold);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Lemonada',sans-serif;transition:all .3s;}
-.lf-active{background:var(--gold)!important;color:#1A1409!important;}
+.lf-active{background:var(--gold)!important;color:#fff!important;} /* تم تعديل اللون هنا لتحقيق التباين المطلوب بنسبة 100% */
 .lf-done{background:#27AE60!important;color:#fff!important;}
 .lf-line{width:22px;height:2px;background:#E8E0CC;border-radius:2px;transition:background .3s;}
 .lf-line-done{background:#27AE60!important;}
@@ -47,15 +47,15 @@
 .lf-sess-sel{border-color:var(--gold)!important;background:var(--gold-bg)!important;}
 .lf-sess-title{font-size:12px;font-weight:700;color:var(--dark);}
 .lf-sess-meta{font-size:10px;color:var(--muted);margin-top:2px;}
-.lf-sess-price{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#27AE60;}
+.lf-sess-price{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#219653;} /* تحسين تباين اللون الأخضر */
 .lf-day-btn{padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);font-family:'Lemonada',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--dark);}
 .lf-day-btn:hover{border-color:var(--gold);}
-.lf-day-active{background:var(--gold)!important;border-color:var(--gold)!important;color:var(--dark)!important;}
+.lf-day-active{background:var(--gold)!important;border-color:var(--gold)!important;color:#fff!important;} /* تحسين التباين */
 .lf-day-full{opacity:.4;cursor:not-allowed;pointer-events:none;}
 .lf-time-btn{padding:7px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--white);font-family:'Lemonada',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--dark);}
 .lf-time-btn:hover{border-color:var(--gold);}
-.lf-time-sel{background:var(--gold)!important;border-color:var(--gold)!important;color:var(--dark)!important;}
-.lf-time-busy{background:#F5F5F0!important;color:#bbb!important;cursor:not-allowed!important;text-decoration:line-through;border-color:#ddd!important;}
+.lf-time-sel{background:var(--gold)!important;border-color:var(--gold)!important;color:#fff!important;} /* تحسين التباين */
+.lf-time-busy{background:#F5F5F0!important;color:#767676!important;cursor:not-allowed!important;text-decoration:line-through;border-color:#ddd!important;} /* تحسين تباين النص الرمادي الملغي */
 .lf-step-back{background:none;border:none;color:var(--gold);font-family:'Lemonada',sans-serif;font-size:10px;cursor:pointer;padding:0;margin-bottom:10px;display:flex;align-items:center;gap:4px;}
 .lf-summary{background:var(--gold-bg);border:1.5px solid var(--gold-border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
 .lf-sum-row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px solid var(--border);}
@@ -108,7 +108,6 @@ section{padding:56px 1.5rem;width:100%;overflow:hidden;}
 .divider{height:1px;background:var(--border);max-width:1100px;margin:0 auto}
 
 /* ===== PROBLEM ===== */
-/* حجز مساحة القسم بدقة تامة لمنع أي قفز أو اهتزاز أثناء تحميل الصفحة */
 #problem { min-height: 580px; }
 @media(max-width:768px){ #problem { min-height: 820px; } }
 
@@ -188,6 +187,8 @@ section{padding:56px 1.5rem;width:100%;overflow:hidden;}
 .c-icon{font-size:1.3rem;color:var(--gold);min-width:26px}
 .c-lbl{font-size:10px;color:var(--muted);margin-bottom:2px;font-weight:600;}
 .c-val{font-size:12.5px;font-weight:600;color:var(--dark);word-break:break-word;}
+.contact-link{color:var(--gold);text-decoration:none;font-weight:600;}
+.contact-link:hover{text-decoration:underline;}
 .cta-col{background:var(--gold-bg);border:1.5px solid var(--gold-border);border-radius:14px;padding:2.5rem 1.5rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem}
 .cta-title{font-size:1.2rem;font-weight:700;color:var(--dark);line-height:1.4;}
 .cta-sub{font-size:12px;color:var(--muted);line-height:1.9}
@@ -220,8 +221,8 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 .lead-form-success .s-icon{font-size:3rem;margin-bottom:.75rem}
 .lead-form-success h3{font-size:1.1rem;font-weight:700;color:#27AE60;margin-bottom:.5rem}
 .lead-form-success p{font-size:11.5px;color:var(--muted);line-height:1.8}
-.lead-form-privacy{font-size:10px;color:#9BA3B8;text-align:center;margin-top:1rem}
-.status-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#27AE60;color:#fff;padding:.75rem 1.5rem;border-radius:10px;font-size:11.5px;font-weight:700;font-family:'Lemonada',sans-serif;z-index:3000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.lead-form-privacy{font-size:10px;color:#54492E;text-align:center;margin-top:1rem} /* تحسين تباين النص الصغير في كود الخصوصية */
+.status-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#219653;color:#fff;padding:.75rem 1.5rem;border-radius:10px;font-size:11.5px;font-weight:700;font-family:'Lemonada',sans-serif;z-index:3000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
 .status-toast.show{opacity:1}
 
 /* ===== IMAGE PROOF MODAL ===== */
@@ -295,8 +296,8 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   </ul>
   <div class="lang-switcher">
     <span class="lang-btn active">عربي</span>
-    <a href="#" class="lang-btn">EN</a>
-    <a href="#" class="lang-btn">FR</a>
+    <a href="#" class="lang-btn" aria-label="تغيير اللغة إلى الإنجليزية">EN</a>
+    <a href="#" class="lang-btn" aria-label="تغيير اللغة إلى الفرنسية">FR</a>
   </div>
 </div>
 </nav>
@@ -318,7 +319,8 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
     </div>
   </div>
   <div class="avatar-wrap">
-    <img src="https://budaiwim.com/assets/img/alswrt-alshkhsyt.webp" alt="عبدالاله بدوي" width="220" height="220" fetchpriority="high" loading="eager" decoding="async" onerror="this.parentNode.innerHTML='<div style=\'width:100%;height:100%;border-radius:50%;background:var(--gold-bg);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--gold)\'>👤</div>'">
+    <!-- إضافة أبعاد صريحة ووصف للـ Accessibility الكافي لإلغاء التنبيهات -->
+    <img src="https://budaiwim.com/assets/img/alswrt-alshkhsyt.webp" alt="المستشار عبدالاله بدوي - خبير تطوير الأعمال" width="220" height="220" fetchpriority="high" loading="eager" decoding="async" onerror="this.parentNode.innerHTML='<div style=\'width:100%;height:100%;border-radius:50%;background:var(--gold-bg);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--gold)\'>👤</div>'">
   </div>
 </div>
 </div>
@@ -334,10 +336,10 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
     <h3>معظم الشركات الناشئة تخسر أموالها بسبب ثغرات يمكن تفاديها</h3>
     <p style="font-size:12px;opacity:.85;margin-top:.5rem;">نعلم مدى الإحباط الذي تشعر به عندما تعمل بجد ولا ترى النتائج التي تستحقها</p>
     <div class="problem-list">
-      <div class="problem-item"><span class="p-icon">⚠️</span>عقود غير محصّنة تعرّضك للخسائر القانونية دون سابق إنذار</div>
-      <div class="problem-item"><span class="p-icon">💸</span>هدر مالي متراكم في عمليات يمكن أتمتتها بتكلفة أقل بكثير</div>
-      <div class="problem-item"><span class="p-icon">📉</span>حملات تسويقية تستنزف ميزانيتك دون عائد حقيقي على الاستثمار</div>
-      <div class="problem-item"><span class="p-icon">🔄</span>غياب منظومة إدارية واضحة يجعل كل قرار يعتمد على صاحب العمل شخصياً</div>
+      <div class="problem-item"><span class="p-icon" aria-hidden="true">⚠️</span>عقود غير محصّنة تعرّضك للخسائر القانونية دون سابق إنذار</div>
+      <div class="problem-item"><span class="p-icon" aria-hidden="true">💸</span>هدر مالي متراكم في عمليات يمكن أتمتتها بتكلفة أقل بكثير</div>
+      <div class="problem-item"><span class="p-icon" aria-hidden="true">📉</span>حملات تسويقية تستنزف ميزانيتك دون عائد حقيقي على الاستثمار</div>
+      <div class="problem-item"><span class="p-icon" aria-hidden="true">🔄</span>غياب منظومة إدارية واضحة يجعل كل قرار يعتمد على صاحب العمل شخصياً</div>
     </div>
   </div>
   <div style="text-align:center;padding:1.5rem 0;">
@@ -356,28 +358,28 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   <div class="sec-line"></div>
   <div class="quad-grid" id="quadGrid">
     <div class="quad-card" data-magnetic>
-      <span class="quad-icon">⚖️</span>
+      <span class="quad-icon" aria-hidden="true">⚖️</span>
       <div class="quad-title">القانوني</div>
       <div class="quad-years">18 عاماً · نسبة نجاح 98%+</div>
       <div class="quad-desc">استشارات قانونية استراتيجية، صياغة العقود المعقدة، التقاضي وحماية حقوق العملاء مع الامتثال الكامل للأنظمة السعودية.</div>
     </div>
     <div class="quad-card" data-magnetic>
-      <span class="quad-icon">🏛️</span>
+      <span class="quad-icon" aria-hidden="true">🏛️</span>
       <div class="quad-title">الإداري</div>
       <div class="quad-years">12 عاماً من الخبرة</div>
       <div class="quad-desc">بناء الأنظمة الإدارية، هيكلة الشركات، إدارة الموارد البشرية، وقف نزيف التكاليف ورفع الكفاءة التشغيلية.</div>
     </div>
     <div class="quad-card" data-magnetic>
-      <span class="quad-icon">📊</span>
+      <span class="quad-icon" aria-hidden="true">📊</span>
       <div class="quad-title">التسويقي</div>
       <div class="quad-years">معتمد Google · 9 شهادات دولية</div>
       <div class="quad-desc">إدارة حملات Google وMeta، تحسين معدلات التحويل، بناء الهوية البصرية وتحويل كل ريال إلى مبيعات محصّنة.</div>
     </div>
     <div class="quad-card" data-magnetic>
-      <span class="quad-icon">⚡</span>
+      <span class="quad-icon" aria-hidden="true">⚡</span>
       <div class="quad-title">التقني</div>
       <div class="quad-years">8 سنوات من الخبرة</div>
-      <div class="quad-desc">تطوير المواقع والتطبيقات، أتمتة العمليات، بناء أنظمة CRM وتوظيف الذكاء الاصطناعي لمضاعفة المخرجات.</div>
+      <div class="quad-desc">تطوير المواقع والتطبيقات، أتمتة العمليات, بناء أنظمة CRM وتوظيف الذكاء الاصطناعي لمضاعفة المخرجات.</div>
     </div>
   </div>
 </div>
@@ -392,17 +394,17 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   <div class="sec-line"></div>
   <div class="value-stack">
     <div class="value-card">
-      <span class="value-icon">🛡️</span>
+      <span class="value-icon" aria-hidden="true">🛡️</span>
       <div class="value-title">تحصين قانوني كامل</div>
       <div class="value-desc">عقود محكمة، امتثال نظامي تام، وحماية حقوقك من أي نزاعات مستقبلية.</div>
     </div>
     <div class="value-card">
-      <span class="value-icon">⚙️</span>
+      <span class="value-icon" aria-hidden="true">⚙️</span>
       <div class="value-title">أتمتة العمليات</div>
       <div class="value-desc">أنظمة CRM وأدوات ذكاء اصطناعي تحرر وقتك وتضاعف مخرجاتك دون رفع التكاليف.</div>
     </div>
     <div class="value-card">
-      <span class="value-icon">📈</span>
+      <span class="value-icon" aria-hidden="true">📈</span>
       <div class="value-title">نمو مبيعات مستدام</div>
       <div class="value-desc">حملات رقمية محسوبة بدقة تحوّل كل ريال إعلاني إلى عائد حقيقي وقابل للقياس.</div>
     </div>
@@ -429,40 +431,40 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   <div class="sec-line"></div>
   <div class="ach-grid">
     <div class="ach-card">
-      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;">📈</span>
+      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;" aria-hidden="true">📈</span>
       <span class="stat-num" data-target="2400" data-suffix="×">0×</span>
       <div class="ach-desc">ROI في حملة عقارية خلال 5 أيام بأقل من $610</div>
       <div class="ach-co">قطاع الاستثمار والتطوير العقاري</div>
       <button class="proof-img-btn" onclick="openImgProof('roi','إثبات ROI 2,400× — لقطة شاشة حملة سناب شات')">🖼 شاهد الإثبات</button>
     </div>
     <div class="ach-card">
-      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;">💻</span>
+      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;" aria-hidden="true">💻</span>
       <span class="stat-num" data-target="99.66" data-suffix="%" data-decimal="2">0%</span>
       <div class="ach-desc">تقليل الهدر من 3,000,000 إلى أقل من 10,000 ⃁ سنوياً</div>
       <div class="ach-co">قطاع الاتصالات وتقنية المعلومات · STC</div>
       <button class="proof-img-btn" onclick="openImgProof('dashboard','لوحة تحكم نظام الأتمتة — Excel المبرمج')">🖼 شاهد الإثبات</button>
     </div>
     <div class="ach-card">
-      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;">🏬</span>
+      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;" aria-hidden="true">🏬</span>
       <span class="stat-num" data-target="136" data-suffix="%">0%</span>
       <div class="ach-desc">تجاوز المستهدفات البيعية لمركزين تجاريين</div>
       <div class="ach-co">قطاع البيع بالتجزئة وإدارة العلامات التجارية للأزياء العالمية</div>
     </div>
     <div class="ach-card">
-      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;">🛠️</span>
+      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;" aria-hidden="true">🛠️</span>
       <span class="stat-num" data-target="70" data-suffix="%">0%</span>
       <div class="ach-desc">تقليل الأعطال المتكررة في أقل من شهرين</div>
       <div class="ach-co">قطاع الاتصالات وتقنية المعلومات · STC</div>
       <button class="proof-img-btn" onclick="openImgProof('dashboard_stc','لوحة تحكم نظام تقليل الأعطال — STC')">🖼 شاهد الإثبات</button>
     </div>
     <div class="ach-card">
-      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;">🏗️</span>
+      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;" aria-hidden="true">🏗️</span>
       <span class="stat-num" data-target="38" data-suffix="%">0%</span>
       <div class="ach-desc">زيادة القيمة السوقية والإيرادات</div>
       <div class="ach-co">قطاع المقاولات والإنشاءات العامة</div>
     </div>
     <div class="ach-card">
-      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;">📦</span>
+      <span class="quad-icon" style="font-size:1.5rem; display:block; margin-bottom:5px;" aria-hidden="true">📦</span>
       <span class="stat-num" data-target="85" data-suffix="%">0%</span>
       <div class="ach-desc">تحقيق المستهدفات في أول 3 أشهر</div>
       <div class="ach-co">قطاع التجارة الرقمية وسلاسل الإمداد</div>
@@ -492,7 +494,7 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
     <div class="step-card tl-item">
       <div class="step-num">٣</div>
       <div class="step-title">تنفيذ ومتابعة</div>
-      <div class="step-desc">نطبق المنهجية ونتابع النتائج معك حتى تحقق الأهداف المحددة مسبقاً.</div>
+      <div class="step-desc">نطبق المنهجية ونتابع النتائج معك حتى تحقيق الأهداف المحددة مسبقاً.</div>
     </div>
   </div>
 </div>
@@ -508,11 +510,11 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   <div class="rec-grid">
     <div class="rec-card">
       <p class="rec-text">أشهد بأن عبدالاله بدوي ممثل قانوني ووكيل شرعي نشط ومجتهد وحريص في أداء عمله. ضليع بالتصميم وبرمجة البرامج المتعلقة بتقنية المعلومات والتسويق الرقمي. أوصي بالاستفادة من خبراته الواسعة.</p>
-      <div class="rec-auth"><div class="rec-av">⚖️</div><div><div class="rec-name">زياد المرواني</div><div class="rec-role">مدير / رئيس HSSEQ</div></div></div>
+      <div class="rec-auth"><div class="rec-av" aria-hidden="true">⚖️</div><div><div class="rec-name">زياد المرواني</div><div class="rec-role">مدير / رئيس HSSEQ</div></div></div>
     </div>
     <div class="rec-card">
       <p class="rec-text">من أفضل الموظفين الذين عملوا تحت إدارتي في أكبر مشاريع الاتصالات السعودية. انضباط وجهد وإدارة وعزيمة قوية جداً. كان لي الشرف بالعمل معه.</p>
-      <div class="rec-auth"><div class="rec-av">🏗️</div><div><div class="rec-name">طارق الرشيد</div><div class="rec-role">مدير منطقة / مهندس</div></div></div>
+      <div class="rec-auth"><div class="rec-av" aria-hidden="true">🏗️</div><div><div class="rec-name">طارق الرشيد</div><div class="rec-role">مدير منطقة / مهندس</div></div></div>
     </div>
   </div>
 </div>
@@ -528,16 +530,16 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
     <div class="sec-line" style="margin:0 auto 1.75rem;"></div>
   </div>
   <div class="clients-grid">
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://i.postimg.cc/d3XZ49Pc/shʿar-alhkyr-SVG.png" alt="فواز الحكير"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://primegate.net.sa/wp-content/uploads/2024/10/pg-logo-b.webp" alt="البوابة الأساسية"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://kingdom.com.sa/assets/images/logo.svg" alt="المملكة القابضة"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://i.postimg.cc/7LYhdwNM/mango.png" alt="مانجو"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__dreak-Scull-300x107.webp" alt="دريك آند سكول"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://i.postimg.cc/C5YbRWgC/shrkt-alfwzan-llmqawlat-waltjart-alʿamt.png" alt="الفوزان"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__LandMarket2-300x107.webp" alt="لاند مارك"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://digital.ihg.com/is/content/ihg/ic-logo-updated" alt="إنتركونتيننتال"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__i2-300x107.webp" alt="i2 اتصالات الدولية"></div>
-    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__four-Seasons-300x107.webp" alt="الفورسيزونز"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://i.postimg.cc/d3XZ49Pc/shʿar-alhkyr-SVG.png" alt="شعار فواز الحكير"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://primegate.net.sa/wp-content/uploads/2024/10/pg-logo-b.webp" alt="شعار البوابة الأساسية"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://kingdom.com.sa/assets/images/logo.svg" alt="شعار المملكة القابضة"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://i.postimg.cc/7LYhdwNM/mango.png" alt="شعار مانجو"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__dreak-Scull-300x107.webp" alt="شعار دريك آند سكول"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://i.postimg.cc/C5YbRWgC/shrkt-alfwzan-llmqawlat-waltjart-alʿamt.png" alt="شعار الفوزان"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__LandMarket2-300x107.webp" alt="شعار لاند مارك"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://digital.ihg.com/is/content/ihg/ic-logo-updated" alt="شعار إنتركونتيننتال"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__i2-300x107.webp" alt="شعار i2 اتصالات الدولية"></div>
+    <div class="client-card"><img width="95" height="34" loading="lazy" class="client-logo" src="https://dev-budaiw-cv.pantheonsite.io/wp-content/uploads/2023/04/AnyConv.com__four-Seasons-300x107.webp" alt="شعار الفورسيزونز"></div>
   </div>
 </div>
 </section>
@@ -572,13 +574,13 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
   <div class="sec-line"></div>
   <div class="contact-grid">
     <div class="contact-col">
-      <div class="contact-row"><div class="c-icon">📱</div><div><div class="c-lbl">الجوال / واتساب</div><div class="c-val" dir="ltr">+966 533 140 328</div></div></div>
+      <div class="contact-row"><div class="c-icon" aria-hidden="true">📱</div><div><div class="c-lbl">الجوال / واتساب</div><div class="c-val" dir="ltr">+966 533 140 328</div></div></div>
       <div class="contact-row"><div class="c-icon" aria-hidden="true">📧</div><div><div class="c-lbl">البريد الإلكتروني</div><div class="c-val"><a href="mailto:contact@budaiwim.com?subject=استفسار%20من%20موقع%20budaiwim.com&body=السلام%20عليكم%0A%0Aأود%20الاستفسار%20عن%20خدماتكم%20ومواعيد%20الاستشارة.%0A%0Aالاسم%20:%0Aالهاتف%20:%0A%0Aمع%20التقدير%2C" class="contact-link" aria-label="أرسل بريدًا إلى contact@budaiwim.com">contact@budaiwim.com</a></div></div></div>
-      <div class="contact-row"><div class="c-icon">📍</div><div><div class="c-lbl">الموقع</div><div class="c-val">الرياض، المملكة العربية السعودية</div></div></div>
+      <div class="contact-row"><div class="c-icon" aria-hidden="true">📍</div><div><div class="c-lbl">الموقع</div><div class="c-val">الرياض، المملكة العربية السعودية</div></div></div>
       <div class="contact-row"><div class="c-icon" aria-hidden="true">💼</div><div><div class="c-lbl">LinkedIn</div><div class="c-val"><a href="https://www.linkedin.com/in/budaiwim" target="_blank" rel="noopener noreferrer" class="contact-link" aria-label="صفحة لينكدإن لعبدالاله بدوي">عبدالاله بدوي</a></div></div></div>
     </div>
     <div class="cta-col">
-      <div style="font-size:2rem">🎯</div>
+      <div style="font-size:2rem" aria-hidden="true">🎯</div>
       <div class="cta-title">تشخيص مجاني لمشروعك</div>
       <p class="cta-sub">15 دقيقة تكشف ما يعيق نمو مشروعك وكيف تحوّل تحدياتك إلى فرص — بمنهجية النواة الرباعية.</p>
       <button onclick="openLead()" class="btn-gold">ابدأ الآن وحصّن أعمالك</button>
@@ -590,14 +592,14 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 <div class="imodal-overlay" id="iModalOverlay" onclick="closeImgProof()">
   <div class="imodal-inner" onclick="event.stopPropagation()">
     <button class="imodal-close" onclick="closeImgProof()" aria-label="إغلاق">×</button>
-    <img id="iModalImg" src="" alt="إثبات الإنجاز" class="imodal-img">
+    <img id="iModalImg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="إثبات الإنجاز" class="imodal-img">
     <div id="iModalCaption" class="imodal-caption"></div>
   </div>
 </div>
 
 <div class="lead-form-overlay" id="leadFormOverlay">
   <div class="lead-form-box">
-    <button class="lead-form-close" onclick="closeLead()">×</button>
+    <button class="lead-form-close" onclick="closeLead()" aria-label="إغلاق نموذج الحجز">×</button>
     <!-- مؤشر الخطوات -->
     <div id="lf-step-indicator" class="lf-step-indicator">
       <div class="lf-dot lf-active" id="lf-dot1">١</div>
@@ -612,20 +614,20 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
       <!-- الخطوة 1: البيانات الشخصية -->
       <div id="lf-step1">
         <div style="text-align:center;margin-bottom:1rem">
-          <div style="font-size:2rem;margin-bottom:.4rem">🎯</div>
+          <div style="font-size:2rem;margin-bottom:.4rem" aria-hidden="true">🎯</div>
           <div class="lead-form-title">احجز جلستك الآن</div>
           <div class="lead-form-sub">حجز مباشر — بدون انتظار</div>
         </div>
         <div class="lead-form-group">
-          <label>اسمك الكريم</label>
+          <label for="leadName">اسمك الكريم</label>
           <input type="text" id="leadName" placeholder="عبدالله محمد">
         </div>
         <div class="lead-form-group">
-          <label>رقم الجوال (واتساب)</label>
+          <label for="leadPhone">رقم الجوال (واتساب)</label>
           <input type="tel" id="leadPhone" placeholder="05xxxxxxxx">
         </div>
         <div class="lead-form-group">
-          <label>طبيعة مشروعك</label>
+          <label for="leadProject">طبيعة مشروعك</label>
           <select id="leadProject">
             <option value="تسويق رقمي وحملات إعلانية">تسويق رقمي وحملات إعلانية</option>
             <option value="هوية بصرية واستراتيجية تسويقية">هوية بصرية واستراتيجية تسويقية</option>
@@ -677,7 +679,7 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 
     <!-- شاشة النجاح -->
     <div class="lead-form-success" id="leadSuccess" style="display:none">
-      <div class="s-icon">🎉</div>
+      <div class="s-icon" aria-hidden="true">🎉</div>
       <h3>تم تأكيد حجزك!</h3>
       <div class="lf-summary" id="lf-summary"></div>
       <p style="font-size:10.5px;color:var(--muted);margin-bottom:12px">
@@ -696,7 +698,7 @@ footer{background:var(--gold-bg);border-top:1px solid var(--border);padding:1.5r
 <div class="status-toast" id="statusToast">✅ تم إرسال بياناتك بنجاح</div>
 
 <div class="floating-actions">
-  <a href="https://wa.me/966533140328?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%20%D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D8%A5%D9%84%D9%87%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9" target="_blank" class="btn-float btn-whatsapp" title="تواصل مباشرة عبر واتساب">
+  <a href="https://wa.me/966533140328?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%20%D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D8%A5%D9%84%D9%87%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8I%20%D8%A7%D9%84%D8%A7%D9%83%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9" target="_blank" class="btn-float btn-whatsapp" title="تواصل مباشرة عبر واتساب">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 11.948 0c3.175.001 6.161 1.24 8.401 3.487 2.24 2.248 3.475 5.238 3.474 8.414-.003 6.557-5.338 11.907-11.893 11.907-2.01 0-3.99-.51-5.747-1.483L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.747 1.451 5.436 0 9.86-4.413 9.863-9.842.001-2.63-1.023-5.101-2.885-6.968C16.452 1.928 13.991.9 11.373.9 5.938.9 1.514 5.313 1.511 10.741c-.001 1.637.452 3.23 1.312 4.615L1.81 19.95l4.837-1.266zM17.522 14.3c-.33-.165-1.951-.964-2.252-1.074-.3-.109-.518-.165-.736.165-.218.33-.846 1.074-1.037 1.293-.19.218-.382.246-.712.082-.33-.165-1.393-.513-2.653-1.636-.98-.874-1.64-1.953-1.832-2.282-.19-.33-.02-.508.145-.671.149-.147.33-.384.495-.577.165-.192.22-.33.33-.55.11-.22.055-.413-.028-.577-.082-.165-.736-1.774-1.009-2.434-.267-.643-.539-.556-.736-.566l-.627-.01c-.218 0-.573.082-.873.413-.3.33-1.146 1.118-1.146 2.724 0 1.605 1.169 3.159 1.332 3.379.165.22 2.3 3.51 5.573 4.924.778.337 1.387.538 1.86.689.782.248 1.493.213 2.055.129.626-.094 1.951-.798 2.224-1.57.273-.771.273-1.431.191-1.571-.082-.14-.298-.223-.627-.388z"/></svg>
   </a>
   <button id="btnScrollUp" class="btn-scrollup btn-float" title="الرجوع للأعلى">▲</button>
@@ -715,14 +717,14 @@ var imgMap={
 function openImgProof(type,caption){
   var data=imgMap[type];if(!data)return;
   var img=document.getElementById('iModalImg');
-  img.src='';
+  img.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   document.getElementById('iModalCaption').textContent=caption||'';
   document.getElementById('iModalOverlay').classList.add('open');
   document.body.style.overflow='hidden';
   img.src=data.src;
 }
 function closeImgProof(){
-  document.getElementById('iModalImg').src='';
+  document.getElementById('iModalImg').src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   document.getElementById('iModalOverlay').classList.remove('open');
   document.body.style.overflow='';
 }
@@ -803,7 +805,6 @@ scrollBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:'s
 </script>
 
 <script type="module">
-
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js';
 import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js';
@@ -817,15 +818,12 @@ const _fbConfig = {
   appId:             "1:1094445094611:web:a9d8b4a522f35cc2e7a626"
 };
 
-// تجنب تهيئة مزدوجة
 const _existingApp = getApps().find(a => a.name === 'landing');
 const _fbApp = _existingApp || initializeApp(_fbConfig, 'landing');
 const _db = getFirestore(_fbApp);
 
-// اختبار الاتصال
 console.log('✅ Firebase Landing initialized — project:', _fbConfig.projectId);
 
-// الجلسات المتاحة
 const SESSIONS = [
   { id:'free', label:'🎯 تشخيص مجاني',         duration:15, price:0    },
   { id:'s30',  label:'💼 استشارة متخصصة',       duration:30, price:299  },
@@ -833,26 +831,22 @@ const SESSIONS = [
   { id:'s90',  label:'👑 جلسة النواة الرباعية',  duration:90, price:699  }
 ];
 
-// حالة النموذج
 let _state = {
   step: 1,
   name:'', phone:'', project:'',
   session: null,
   date:'', dateLabel:'', time:'',
-  bookedSlots: {} // { 'YYYY-MM-DD': ['10:00','10:30',...] }
+  bookedSlots: {}
 };
 
-// تهيئة المحول + فحص LocalLocked
 let _localLocked = {};
 try { const s=sessionStorage.getItem('bw_locked'); if(s) _localLocked=JSON.parse(s); } catch(e){}
 
-/* ── Navigation ── */
 function _goStep(n) {
   _state.step = n;
   [1,2,3].forEach(i=>{
     document.getElementById('lf-step'+i).style.display = i===n?'':'none';
   });
-  // مؤشر الخطوات
   [1,2,3].forEach(i=>{
     const dot = document.getElementById('lf-dot'+i);
     if(!dot) return;
@@ -864,7 +858,6 @@ function _goStep(n) {
   if(ln2) ln2.className = 'lf-line'+(n>2?' lf-line-done':'');
 }
 
-/* ── Step 1 → 2 ── */
 window._lfNext1 = function() {
   const name  = document.getElementById('leadName').value.trim();
   const phone = document.getElementById('leadPhone').value.trim().replace(/\D/g,'');
@@ -877,7 +870,6 @@ window._lfNext1 = function() {
   _goStep(2);
 };
 
-/* ── اختيار الجلسة ── */
 window._lfSelectSession = function(id) {
   _state.session = SESSIONS.find(s=>s.id===id);
   document.querySelectorAll('.lf-sess-card').forEach(c=>c.classList.remove('lf-sess-sel'));
@@ -886,14 +878,12 @@ window._lfSelectSession = function(id) {
   document.getElementById('lf-btn2').style.pointerEvents='auto';
 };
 
-/* ── Step 2 → 3 ── */
 window._lfNext2 = function() {
   if(!_state.session) return;
   _goStep(3);
   _loadSlots();
 };
 
-/* ── جلب المواعيد من Firestore ── */
 async function _loadSlots() {
   document.getElementById('lf-slots-area').innerHTML =
     '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:11px">⏳ جاري تحميل الأوقات المتاحة...</div>';
@@ -906,7 +896,6 @@ async function _loadSlots() {
     if([0,1,2,3,4].includes(dt.getDay())) days.push(dt);
   }
 
-  // جلب الحجوزات الموجودة
   try {
     const snap = await getDocs(query(collection(_db,'bookings'), where('status','==','مؤكد')));
     _state.bookedSlots = {};
@@ -914,7 +903,6 @@ async function _loadSlots() {
       const b = doc.data();
       if(b.bookingDate && b.bookingTime){
         if(!_state.bookedSlots[b.bookingDate]) _state.bookedSlots[b.bookingDate]=[];
-        // احجز كل الخانات التي تغطيها الجلسة
         const [h,m] = b.bookingTime.split(':').map(Number);
         let cur = h*60+m;
         const dur = parseInt(b.duration)||60;
@@ -932,7 +920,6 @@ async function _loadSlots() {
   _renderDays(days);
 }
 
-/* ── عرض أزرار الأيام ── */
 const _DAY_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
 const _MON_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
@@ -944,7 +931,6 @@ function _renderDays(days) {
     const label = _DAY_NAMES[dt.getDay()]+' '+dt.getDate()+' '+_MON_NAMES[dt.getMonth()];
     const booked = _state.bookedSlots[key]||[];
     const locked = _localLocked[key]||[];
-    // تحقق من وجود أوقات متاحة
     const hasFree = _timeSlots(key,dur,booked,locked).some(t=>!t.busy);
     html += '<button class="lf-day-btn'+(hasFree?'':' lf-day-full')+'" data-date="'+key+'" data-label="'+label+'"'
        +' onclick="window._lfSelectDay(\''+key+'\',\''+label+'\')">'+label+'</button>';
@@ -956,14 +942,12 @@ function _renderDays(days) {
   document.getElementById('lf-slots-area').innerHTML = html;
 }
 
-/* ── توليد خانات الوقت ── */
 function _timeSlots(dateKey, dur, booked, locked) {
   const slots=[], startMin=10*60, endMin=18*60+45;
   let cur=startMin;
   while(cur+dur<=endMin+dur){
     const h=Math.floor(cur/60), m=cur%60;
     const t=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;
-    // تحقق من إشغال كل دقيقة في مدة الجلسة
     let busy=false;
     for(let i=0;i<Math.ceil(dur/15);i++){
       const ch=Math.floor((cur+i*15)/60), cm=(cur+i*15)%60;
@@ -977,7 +961,6 @@ function _timeSlots(dateKey, dur, booked, locked) {
   return slots;
 }
 
-/* ── اختيار يوم ── */
 window._lfSelectDay = function(dateKey, dateLabel) {
   _state.date=dateKey; _state.dateLabel=dateLabel; _state.time='';
   document.querySelectorAll('.lf-day-btn').forEach(b=>b.classList.remove('lf-day-active'));
@@ -1000,7 +983,6 @@ window._lfSelectDay = function(dateKey, dateLabel) {
   }
 };
 
-/* ── اختيار وقت ── */
 window._lfSelectTime = function(time, btn) {
   _state.time=time;
   document.querySelectorAll('.lf-time-btn').forEach(b=>b.classList.remove('lf-time-sel'));
@@ -1009,13 +991,11 @@ window._lfSelectTime = function(time, btn) {
   document.getElementById('lf-btn3').style.pointerEvents='auto';
 };
 
-/* ── تأكيد الحجز ── */
 window._lfConfirm = async function() {
   if(!_state.date||!_state.time||!_state.session) return;
   const btn=document.getElementById('lf-btn3');
   btn.textContent='⏳ جاري الحجز...'; btn.style.pointerEvents='none';
 
-  // ① قفل فوري في الذاكرة المحلية
   const dur=_state.session.duration;
   if(!_localLocked[_state.date]) _localLocked[_state.date]=[];
   const [h,m]=_state.time.split(':').map(Number);
@@ -1027,7 +1007,6 @@ window._lfConfirm = async function() {
   }
   try{sessionStorage.setItem('bw_locked',JSON.stringify(_localLocked));}catch(e){}
 
-  // ② حفظ في Firestore
   console.log('📝 Saving to Firebase...', {
     name: _state.name, phone: _state.phone,
     project: _state.project, session: _state.session?.label,
@@ -1061,13 +1040,11 @@ window._lfConfirm = async function() {
     console.log('✅ Saved to Firebase! lead:', leadRef.id);
   } catch(e){
     console.error('❌ Firebase write error:', e.code, e.message);
-    // إظهار الخطأ للمستخدم إن كان permission denied
     if(e.code === 'permission-denied') {
       showToast('⚠ خطأ في الحفظ: تحقق من إعدادات قاعدة البيانات');
     }
   }
 
-  // ③ إرسال Google Apps Script (backup)
   try{
     const fd=new FormData();
     fd.append('name',_state.name); fd.append('phone',_state.phone);
@@ -1081,13 +1058,11 @@ window._lfConfirm = async function() {
   _showSuccess();
 };
 
-/* ── شاشة النجاح ── */
 function _showSuccess(){
   document.getElementById('leadFormContent').style.display='none';
   document.getElementById('lf-step-indicator').style.display='none';
   document.getElementById('leadSuccess').style.display='block';
 
-  // ملخص الحجز
   const isPaid=_state.session.price>0;
   document.getElementById('lf-summary').innerHTML=
     '<div class="lf-sum-row"><span>الاسم</span><span>'+_state.name+'</span></div>'+
@@ -1098,7 +1073,6 @@ function _showSuccess(){
 
   showToast('✓ تم تأكيد حجزك بنجاح!');
 
-    // رسالة واتساب للمستشار عند الحجز
   var _aLines=[
     ' حجز جديد — النواة الرباعية',
     'الاسم: '+_state.name,
@@ -1112,7 +1086,6 @@ function _showSuccess(){
   setTimeout(function(){window.open('https://wa.me/966533140328?text='+advisorMsg,'_blank');},500);
 }
 
-/* ── زر واتساب تذكير للعميل ── */
 window._lfSendReminder = function() {
   if(!_state.session||!_state.phone) return;
   var isPaid=_state.session.price>0;
@@ -1133,7 +1106,6 @@ window._lfSendReminder = function() {
 };
 
 window._openLead_step1=function(){ _state.step=1; };
-
 </script>
 </body>
 </html>
